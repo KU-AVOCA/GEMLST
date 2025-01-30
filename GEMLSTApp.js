@@ -1,4 +1,11 @@
 /*
+This is a GEE app for visualizing the Greenalnd Ecosystem Monitoring (GEM) Landsat Surface Temperature (LST) data.
+
+Shunan Feng (shf@ign.ku.dk)
+*/
+
+
+/*
  * Map layer configuration
  */
 
@@ -7,41 +14,36 @@ var greenland = ee.Geometry.Polygon([
    [-11.0, 59.0], [-11.0, 83.0], [-74.0, 83.0]]
 ]);
 var greenlandmask = ee.Image('OSU/GIMP/2000_ICE_OCEAN_MASK').select('ocean_mask').eq(0);
-
-
 var arcticDEM = ee.Image('UMN/PGC/ArcticDEM/V3/2m_mosaic').updateMask(greenlandmask);
-
 var palettes = require('users/gena/packages:palettes');
-
 
 var elevationVis = {
   min: 0.0,
   max: 3500.0,
   palette: palettes.cmocean.Ice[7] //['006633', 'E5FFCC', '662A00', 'D8D8D8', 'F5F5F5']//palettes.cmocean.Ice[7]
 };    
-var arcticDEMgreenland = arcticDEM.visualize(elevationVis);//.updateMask(greenlandmask);
-var demLayer = ui.Map.Layer(arcticDEMgreenland).setName('arctic dem');
-
+var arcticDEMgreenland = arcticDEM.visualize(elevationVis);
+var demLayer = ui.Map.Layer(arcticDEMgreenland).setName('arctic dem');// base map
 
 /*
 prepare GEM-LST data
 */
 
+// 1. Set the date range and visualization parameters
 var date_start = ee.Date.fromYMD(2000, 1, 1),
-    date_end = ee.Date(Date.now()),
-    now = Date.now();
+    date_end = ee.Date(Date.now());
 // palette ref: https://gist.github.com/jscarto/6cc7f547bb7d5d9acda51e5c15256b01
 var surfTpallete = palettes.cmocean.Thermal[7];
 var vis = {min: -20, max: 20, palette: surfTpallete};
 
-// 2. Load MODIS Terra and Aqua LST data
+// 2. Functions to load and preprocess MODIS Terra and Aqua LST data
 // 2.1 Quality Control Function 
 // ref: https://gis.stackexchange.com/a/360887
-var bitwiseExtract = function(input, fromBit, toBit) {
-    var maskSize = ee.Number(1).add(toBit).subtract(fromBit);
-    var mask = ee.Number(1).leftShift(maskSize).subtract(1);
-    return input.rightShift(fromBit).bitwiseAnd(mask);
-  }
+function bitwiseExtract(input, fromBit, toBit) {
+  var maskSize = ee.Number(1).add(toBit).subtract(fromBit);
+  var mask = ee.Number(1).leftShift(maskSize).subtract(1);
+  return input.rightShift(fromBit).bitwiseAnd(mask);
+}
 
 function maskQualityDaytime(image) {
     var qa = image.select('QC_Day');
@@ -110,7 +112,7 @@ function maskQualityNighttime(image) {
 
     return image.updateMask(mask);
 }
-// Coefficients for calbrating and calculating the final LST
+// 2.2 Coefficients for calbrating and calculating the final LST
 // Each obs_avail_flag is a unique combination of MODIS Terra and Aqua LST availability
 // The availablity is noted in the comments of the coefficients, where 0 is not available and 1 is available
 var coefficients = {
@@ -146,53 +148,12 @@ var coefficients = {
     15: {intercept: -0.155889791750814, Tx: 0.996384902208461, SW_netx: 2.61860711397444E-09,  obs_avail_flag:15}
 };
 
-// Create the main map and add arctic dem as base map.
+// 2.3 Create the main map and add arctic dem as base map.
 var mapPanel = ui.Map();
 mapPanel.setOptions('HYBRID').setControlVisibility(true);
 var layers = mapPanel.layers();
 layers.add(demLayer, 'arctic dem');
 
-// /*
-// MODIS Albedo as gif, disabled by default
-// */
-// var modisCol = ee.ImageCollection('MODIS/006/MOD10A1')
-//   .filterDate(ee.Date(Date.now()).advance(-7, 'day'), ee.Date(Date.now()).advance(0, 'day'))
-//   .select('Snow_Albedo_Daily_Tile')
-//   .map(function(img){
-//     return img.updateMask(greenlandmask);
-//   });
-
-// // Define arguments for animation function parameters.
-// var gifParams = {
-//   dimensions: 768,
-//   region: aoi,
-//   framesPerSecond: 1,
-//   crs: 'EPSG:3857',
-//   min: 0,
-//   max: 100,
-//   palette: blue_fluorite
-// };
-
-// var gifAnimation = ui.Thumbnail({
-//   image: modisCol,
-//   params: gifParams,
-//   style: {
-//     position: 'bottom-right',
-//     width: '200px',
-//     height: '250px'
-//   }
-// });
-
-// var gifPanel = ui.Panel({
-//   widgets: [
-//     ui.Label('MOD10A1.006 Snow_Albedo_Daily_Tile\nin the past week.',
-//     {whiteSpace: 'pre'}),
-//     gifAnimation
-//   ],
-//   style: {position: 'bottom-right'},
-//   layout: null,
-//   });
-// mapPanel.add(gifPanel);
 
 /*
  * Panel setup
@@ -204,7 +165,7 @@ var inspectorPanel = ui.Panel({style: {width: '30%'}});
 // Create an intro panel with labels.
 var intro = ui.Panel([
   ui.Label({
-    value: 'Landsat Surface Temperature - Time Series Inspector',
+    value: 'Land Surface Temperature - Time Series Inspector',
     style: {fontSize: '20px', fontWeight: 'bold'}
   }),
   ui.Label('Click a location to see its time series of temperature.')
@@ -422,7 +383,7 @@ var generateChart = function (coords) {
         return applyCorrection(image);
     });
   // Make a chart from the time series.
-  var geeChart = ui.Chart.image.series(finalLST.select('Corrected_LST'), point, ee.Reducer.mean(), 90);
+  var geeChart = ui.Chart.image.series(finalLST.select('Corrected_LST'), point, ee.Reducer.mean(), 1000);
 
   // Customize the chart.
   geeChart.setOptions({
@@ -543,7 +504,7 @@ var dateIntro = ui.Panel([
     value: 'Map Viewer',
     style: {fontSize: '20px', fontWeight: 'bold'}
   }),
-  ui.Label("Change date (YYYY-MM-DD) to load the n-week temperature and natural color composite mosaic for current map window. Increase the week number would include more images but may take longer time. A button to download the temperature image will appear ONLY if: maximum request size < 32 MB and maximum grid dimension < 10000.")
+  ui.Label("Change date (YYYY-MM-DD) to load daily temperature map. ")
 ]);
 inspectorPanel.widgets().set(4, dateIntro);
 
@@ -813,18 +774,6 @@ var loadComposite = function() {
     });
 
     var imMean = finalLST.select('Corrected_LST').mean().updateMask(greenlandmask);
-
-    // var rgblayerName = year + '-' + month + '-' + day;
-    // var rgbComposite = imMean.visualize(
-    //   {
-    //     min: 0,
-    //     max: 1,
-    //     bands:['SR_B4', 'SR_B3', 'SR_B2']
-    //   }
-    // );//.updateMask(greenlandmask);
-    // var rgbCompositeLayer = ui.Map.Layer(rgbComposite).setName(rgblayerName);
-    // mapPanel.layers().set(1, rgbCompositeLayer);
-
     var imgDownload = imMean.select('Corrected_LST');
     var layerName = 'tmperature ' + year + '-' + month + '-' + day;
     var imgComposite = imgDownload.visualize(vis);//.updateMask(greenlandmask);
@@ -833,19 +782,19 @@ var loadComposite = function() {
     mapPanel.layers().set(1, imgCompositeLayer);
     // Define a function to generate a download URL of the image for the
     // viewport region. 
-    function downloadImg(img) {
-      // var viewBounds = ee.Geometry.Rectangle(mapPanel.getBounds());
-      var downloadArgs = {
-        name: 'GEMLST',
-        crs: 'EPSG:3857',
-        scale: 30,
-        region: aoi.toGeoJSONString()
-    };
-    var url = img.getDownloadURL(downloadArgs);
-    return url;
-}
-urlLabel.setUrl(downloadImg(imgDownload));
-urlLabel.style().set({shown: true});
+//     function downloadImg(img) {
+//       // var viewBounds = ee.Geometry.Rectangle(mapPanel.getBounds());
+//       var downloadArgs = {
+//         name: 'GEMLST',
+//         crs: 'EPSG:3857',
+//         scale: 30,
+//         region: aoi.toGeoJSONString()
+//     };
+//     var url = img.getDownloadURL(downloadArgs);
+//     return url;
+// }
+// urlLabel.setUrl(downloadImg(imgDownload));
+// urlLabel.style().set({shown: true});
 };
 button.onClick(loadComposite);
 
@@ -853,7 +802,7 @@ button.onClick(loadComposite);
 /*
 add logo , ref: https://gis.stackexchange.com/questions/331842/adding-a-logo-to-a-panel-on-an-app-in-google-earth-engine
 */
-var logo = ee.Image('projects/ee-deeppurple/assets/dplogo').visualize({
+var logo = ee.Image('projects/ku-gem/assets/GEM_Top-h100').visualize({
   bands:  ['b1', 'b2', 'b3'],
   min: 0,
   max: 255
@@ -861,17 +810,17 @@ var logo = ee.Image('projects/ee-deeppurple/assets/dplogo').visualize({
 var thumb = ui.Thumbnail({
   image: logo,
   params: {
-      dimensions: '107x111',
+      dimensions: '516x100',
       format: 'png'
       },
-  style: {height: '107px', width: '111px',padding :'0'}
+  style: {height: '100/2px', width: '516/2px',padding :'0'}
   });
-var logoPanel = ui.Panel(thumb, 'flow', {width: '120px'});
+var logoPanel = ui.Panel(thumb, 'flow', {width: '300px'});
 inspectorPanel.widgets().set(6, logoPanel);
 
 var logoIntro = ui.Panel([
-  ui.Label("The Deep Purple project receives funding from the European Research Council (ERC) under the European Union's Horizon 2020 research and innovation programme under grant agreement No 856416."),
-  ui.Label("https://www.deeppurple-ercsyg.eu/home", {}, "https://www.deeppurple-ercsyg.eu/home"),
+  ui.Label("The project is part of the Greenland Environmental Monitoring (GEM) program, funded by the Danish Ministry of Energy, Utilities and Climate. The project is hosted by the Department of Geosciences and Natural Resource Management, University of Copenhagen.  It is also supported by Villum Foundation (project No. 42069)."),
+  ui.Label("https://g-e-m.dk/", {}, "https://g-e-m.dk/"),
 //   ui.Label("https://github.com/fsn1995/Remote-Sensing-of-Albedo", {}, "https://github.com/fsn1995/Remote-Sensing-of-Albedo"),
 //   ui.Label("Feng, S., Cook, J. M., Anesio, A. M., Benning, L. G. and Tranter, M. (2023) “Long time series (1984–2020) of albedo variations on the Greenland ice sheet from harmonized Landsat and Sentinel 2 imagery,” Journal of Glaciology. Cambridge University Press, 69(277), pp. 1225–1240. doi: 10.1017/jog.2023.11.", {}, "https://doi.org/10.1017/jog.2023.11"),
 //   ui.Label("Feng, S., Cook, J. M., Onuma, Y., Naegeli, K., Tan, W., Anesio, A. M., Benning, L. G., & Tranter, M. (2023). Remote sensing of ice albedo using harmonized Landsat and Sentinel 2 datasets: validation. International Journal of Remote Sensing, 00(00), 1–29. https://doi.org/10.1080/01431161.2023.2291000", {}, "https://doi.org/10.1080/01431161.2023.2291000")

@@ -29,11 +29,11 @@ var startDate = ee.Date.fromYMD(2024, 1, 1),
 // 2. Load MODIS Terra and Aqua LST data
 // 2.1 Quality Control Function 
 // ref: https://gis.stackexchange.com/a/360887
-var bitwiseExtract = function(input, fromBit, toBit) {
+function bitwiseExtract(input, fromBit, toBit) {
     var maskSize = ee.Number(1).add(toBit).subtract(fromBit);
     var mask = ee.Number(1).leftShift(maskSize).subtract(1);
     return input.rightShift(fromBit).bitwiseAnd(mask);
-  }
+}
 
 function maskQualityDaytime(image) {
     var qa = image.select('QC_Day');
