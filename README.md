@@ -1,34 +1,59 @@
-# GEMLST
-Greenland Ecosystem Monitoring - Greenland Surface Temperature Gapless Dataset
+# GEMLST (Greenland Ecosystem Monitoring Land Surface Temperature)
 
-This script creates a daily gapless surface temperature dataset for Greenland using MODIS Terra, MODIS Aqua, and ERA5 Land data. It calibrates the temperature data using a set of coefficients and the surface net solar radiation data from ERA5 Land, and fills gaps in the MODIS LST data using ERA5 Land skin temperature data.
+## Overview
+GEMLST generates a daily gapless land surface temperature dataset for Greenland by combining MODIS and ERA5-Land data. It handles common challenges like cloud cover and data gaps through a sophisticated calibration approach.
 
-## Steps
-[GreenlandSurfTGEE.js](GreenlandSurfTGEE.js) is a Google Earth Engine script that generates a daily gapless surface temperature dataset for Greenland. The script follows the steps below:
+## Requirements
+- Google Earth Engine account
+- Access to the following datasets:
+  - MODIS/061/MOD11A1 (Terra LST)
+  - MODIS/061/MYD11A1 (Aqua LST) 
+  - ECMWF/ERA5_LAND/HOURLY
+  - OSU/GIMP/2000_ICE_OCEAN_MASK
 
-### 1. Define the Region of Interest, Mask, and Time Period
-- **Region of Interest**: Defined as a polygon covering Greenland.
-- **Mask**: Applied to exclude ocean areas using the 'OSU/GIMP/2000_ICE_OCEAN_MASK' dataset.
-- **Time Period**: Set from January 1, 2024, to January 31, 2024. Or you can set your own time period.
+## Data Sources
+- **MODIS Terra & Aqua**: Primary LST measurements (1km resolution)
+  - Day and night observations
+  - Quality control based on QC bands
+- **ERA5-Land**: 
+  - Surface net solar radiation (calibration)
+  - Skin temperature (gap-filling)
+- **GIMP Mask**: Ice/ocean masking
 
-### 2. Load MODIS Terra and Aqua LST Data
-- **Load Data**: Load the MODIS Terra and Aqua Land Surface Temperature (LST) data.
-- **Quality Control**: Apply a quality control function to filter out low-quality data based on the QC_Day band.
+## Algorithm Workflow
+1. **Data Preprocessing**
+   - Apply quality control to MODIS data
+   - Convert units to Celsius
+   - Apply Greenland ice mask
 
-### 3. Apply Quality Control to the LST Data
-- **Quality Control Function**: A function to extract and apply quality control based on specific bits in the QC_Day and QC_Night bands.
+2. **LST Calibration**
+   - Determine data availability pattern
+   - Apply calibration coefficients based on:
+     - Available MODIS observations
+     - Surface net solar radiation
+   - Fill gaps using ERA5-Land data
 
-### 4. Calibrate the LST Data Using ERA5 Land Data
-- **Calibration**: Calibrate the LST data using coefficients and surface net solar radiation data from ERA5 Land.
+3. **Output Generation**
+   - Create daily composites
+   - Export calibrated LST maps
 
-### 5. Fill Gaps in the LST Data Using ERA5 Land Skin Temperature Data
-- **Gap Filling**: Fill gaps in the MODIS LST data using ERA5 Land skin temperature data.
+## Output Description
+The script generates GeoTIFF files with two bands:
+1. **Corrected_LST**: Calibrated land surface temperature (°C)
+2. **Available_Pattern**: Data source flag (1-15)
+   - MODIS Terra Day = 8
+   - MODIS Terra Night = 4
+   - MODIS Aqua Day = 2
+   - MODIS Aqua Night = 1
+   - Values are summed (e.g., 15 = all sources available)
 
-### 6. Generate the Final Gapless Surface Temperature Dataset
-- **Final Dataset**: Generate the final gapless surface temperature dataset by combining the calibrated LST data and the gap-filled data.
-
-### 7. Export the Final Dataset to Google Drive
-- **Export**: Export the final dataset to Google Drive for further analysis and use.
+## Usage
+1. Open code editor in Google Earth Engine and copy the script from [GreenlandSurfTGEE.js](GreenlandSurfTGEE.js).
+2. Set your desired time period:
+```javascript
+var startDate = ee.Date.fromYMD(2024, 1, 1);
+var endDate = ee.Date.fromYMD(2024, 1, 31);
+```
 
 Finally, [GEMLST.js](GEMLST.js) deploys the script into an Earth Engine web app, which allows users to interact with the script and view the daily gapless surface temperature dataset for Greenland.
 (Currently not available due to limitations to generate the time series chart in the Earth Engine web app.)
