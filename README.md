@@ -40,12 +40,24 @@ GEMLST generates a daily gapless land surface temperature dataset for Greenland 
 ## Output Description
 The script generates GeoTIFF files with two bands:
 1. **Corrected_LST**: Calibrated land surface temperature (°C)
-2. **Available_Pattern**: Data source flag (1-15)
-   - MODIS Terra Day = 8
-   - MODIS Terra Night = 4
-   - MODIS Aqua Day = 2
-   - MODIS Aqua Night = 1
-   - Values are summed (e.g., 15 = all sources available)
+2. **Available_Pattern**: Data source flag:
+ The flag uses a binary system to represent data availability from 5 different sources:
+    - Binary to Decimal Example:
+    - MODIS Terra Day   = 1000 (binary) = 8 (decimal)
+    - MODIS Terra Night = 0100 (binary) = 4 (decimal) 
+    - MODIS Aqua Day    = 0010 (binary) = 2 (decimal)
+    - MODIS Aqua Night  = 0001 (binary) = 1 (decimal)
+    - ERA5-Land         = 0000 (binary) = 0 (decimal)
+    
+For example, a flag value of 15 indicates that all 4 MODIS data sources are available.
+
+    | Flag Value | Binary | Available Data               |
+    |------------|--------|------------------------------|
+    | 15         | 1111   | All 4 MODIS data available   |
+    | 8          | 1000   | Only Terra Day               |
+    | 12         | 1100   | Terra Day + Terra Night      |
+    | 10         | 1010   | Terra Day + Aqua Day         |
+    | 0          | 0000   | No data (uses ERA5)          |
 
 ## Usage
 1. Open code editor in Google Earth Engine and copy the script from [GreenlandSurfTGEE.js](GreenlandSurfTGEE.js).
