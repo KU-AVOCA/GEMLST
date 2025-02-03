@@ -614,8 +614,11 @@ var loadComposite = function() {
     var daily_ERA5Land = ee.ImageCollection(ee.List(range.iterate(day_mosaics, ee.List([]))));
 
     // 2.4 Join all collections by date
-    var MODLST = MOD11A1Daytime.select(['MODLST_Day', 'MODQA_Day'])
+    var MODLST = daily_ERA5Land.select(['surface_net_solar_radiation', 'skin_temperature'])
     .linkCollection(
+        MOD11A1Daytime, 
+        ['MODLST_Day', 'MODQA_Day']
+    ).linkCollection(
         MOD11A1Nighttime,
         ['MODLST_Night', 'MODQA_Night']
     ).linkCollection(
@@ -624,9 +627,6 @@ var loadComposite = function() {
     ).linkCollection(
         MYD11A1Nighttime,
         ['MYDLST_Night', 'MYDQA_Night']
-    ).linkCollection(
-        daily_ERA5Land,
-        ['surface_net_solar_radiation', 'skin_temperature']
     );
     // 3.2 Calculate Availability Pattern
     function calculateAvailability(terraDay, terraNight, aquaDay, aquaNight) {
@@ -679,22 +679,21 @@ var loadComposite = function() {
         
         // Create a function to process each coefficient pattern
         var applyCoefficient = function(key, correctedLST) {
-            var numericKey = ee.Number(key).toInt();
-            var coeff = ee.Dictionary(coefficients).get(numericKey.format());
-            var coeffDict = ee.Dictionary(coeff);
-            var intercept = ee.Number(coeffDict.get('intercept'));
-            var tx = ee.Number(coeffDict.get('Tx'));
-            var swNetx = ee.Number(coeffDict.get('SW_netx'));
+          var numericKey = ee.Number(key).toInt();
+          var coeff = ee.Dictionary(coefficients).get(numericKey.format());
+          var coeffDict = ee.Dictionary(coeff);
+          var intercept = ee.Number(coeffDict.get('intercept'));
+          var tx = ee.Number(coeffDict.get('Tx'));
+          var swNetx = ee.Number(coeffDict.get('SW_netx'));
 
-            var patternMask = availPattern.eq(numericKey);
-            var calibratedLST = MODLSTimage.multiply(tx)
-                .add(swNet.multiply(swNetx))
-                .add(intercept)
-                .updateMask(patternMask)
-                .unmask(0);
-            // if no MODIS LST is available, use ERA5 Land skin temperature
-            calibratedLST = calibratedLST.where(patternMask.eq(0), ERA5LST);
-            return ee.Image(correctedLST).add(calibratedLST);
+          var patternMask = availPattern.eq(numericKey);
+          var calibratedLST = MODLSTimage.multiply(tx)
+              .add(swNet.multiply(swNetx))
+              .add(intercept)
+              .updateMask(patternMask)
+              .unmask(0);
+              
+          return ee.Image(correctedLST).add(calibratedLST);
         };
 
         // Use iterate to process all coefficient patterns
@@ -702,7 +701,8 @@ var loadComposite = function() {
             .iterate(applyCoefficient, ee.Image(0));
 
         return image.addBands([
-            ee.Image(correctedLST).rename('Corrected_LST').updateMask(greenlandmask),
+            // if no MODIS LST is available, use ERA5 Land skin temperature
+            ee.Image(correctedLST).where(availPattern.eq(0), ERA5LST).rename('Corrected_LST').updateMask(greenlandmask),
             availPattern.rename('Available_Pattern').updateMask(greenlandmask)
         ]);
     }

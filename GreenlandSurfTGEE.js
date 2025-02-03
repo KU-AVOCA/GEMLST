@@ -189,8 +189,14 @@ var day_mosaics = function(date, newlist) {
 var daily_ERA5Land = ee.ImageCollection(ee.List(range.iterate(day_mosaics, ee.List([]))));
 
 // 2.4 Join all collections by date
-var MODLST = MOD11A1Daytime.select(['MODLST_Day', 'MODQA_Day'])
+// MODIS data are not available on certain dates due to technical issues and maintenance.
+// Use ERA5 Land data as the base collection and link MODIS Terra and Aqua LST data.
+// This will ensure that the final dataset is gapless. 
+var MODLST = daily_ERA5Land.select(['surface_net_solar_radiation', 'skin_temperature'])
 .linkCollection(
+    MOD11A1Daytime, 
+    ['MODLST_Day', 'MODQA_Day']
+).linkCollection(
     MOD11A1Nighttime,
     ['MODLST_Night', 'MODQA_Night']
 ).linkCollection(
@@ -199,11 +205,7 @@ var MODLST = MOD11A1Daytime.select(['MODLST_Day', 'MODQA_Day'])
 ).linkCollection(
     MYD11A1Nighttime,
     ['MYDLST_Night', 'MYDQA_Night']
-).linkCollection(
-    daily_ERA5Land,
-    ['surface_net_solar_radiation', 'skin_temperature']
 );
-
 // 3. Calculate Availability Pattern and Match Coefficients
 
 // 3.1 coefficients for calbrating and calculating the final LST
@@ -306,8 +308,7 @@ function applyCorrection(image) {
             .add(intercept)
             .updateMask(patternMask)
             .unmask(0);
-        // if no MODIS LST is available, use ERA5 Land skin temperature
-        calibratedLST = calibratedLST.where(patternMask.eq(0), ERA5LST);
+            
         return ee.Image(correctedLST).add(calibratedLST);
     };
 
@@ -316,7 +317,8 @@ function applyCorrection(image) {
         .iterate(applyCoefficient, ee.Image(0));
 
     return image.addBands([
-        ee.Image(correctedLST).rename('Corrected_LST').updateMask(greenlandmask),
+        // if no MODIS LST is available, use ERA5 Land skin temperature
+        ee.Image(correctedLST).where(availPattern.eq(0), ERA5LST).rename('Corrected_LST').updateMask(greenlandmask),
         availPattern.rename('Available_Pattern').updateMask(greenlandmask)
     ]);
 }
