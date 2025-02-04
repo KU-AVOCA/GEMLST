@@ -1,5 +1,8 @@
 # GEMLST (Greenland Ecosystem Monitoring Land Surface Temperature)
 
+[![DOI](https://zenodo.org/badge/924540924.svg)](https://doi.org/10.5281/zenodo.14802659)
+[![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2FKU-AVOCA%2FGEMLST&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)
+
 ## Overview
 GEMLST generates a daily gapless land surface temperature dataset for Greenland by combining MODIS and ERA5-Land data (2000-present). It handles common challenges like cloud cover and data gaps through a sophisticated calibration approach.
 An Earth Engine web app is also available to visualize the daily surface temperature dataset for Greenland - [GEMLST-Viewer](https://ku-gem.projects.earthengine.app/view/gemlst-viewer).
