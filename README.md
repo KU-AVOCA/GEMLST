@@ -120,6 +120,9 @@ For example, a flag value of 15 indicates that all 4 MODIS data sources are avai
 
 ## Output Description
 The output from the script [GEMLST_Landsat](GEMLST_Landsat/GEMLST_Landsat.js) is a single band raster file with calibrated LST values.
+Note that the exported tiff is in Kelvin, and rescaled to uint16 (0-65535) to save storage space. 
+Masked pixels are set to 0.
+Users must rescales the values back by: GEMLST_Landsat_Kelvin = GEMLST_Landsat_uint16 * 0.00341802 + 149
 
 # Comments and Future plans
 - The calibration coefficients for GEMLST_MODIS needs to be updated to improve the accuracy of the product. 

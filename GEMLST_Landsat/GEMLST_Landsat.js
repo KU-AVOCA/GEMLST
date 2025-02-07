@@ -178,6 +178,18 @@ var day_mosaics = function(date, newlist) {
 
 var daily_multiSat = ee.ImageCollection(ee.List(range.iterate(day_mosaics, ee.List([]))));
 
+// Convert celcius to kelvin and then convert it back to how the data was stored in landsat 
+// plus 273.15 and then subtract 149 and then divide by 0.00341802 
+//  
+function convertToLandsat(image) {
+    var lst = image.select('GEMLST_Landsat');
+    var lst_kelvin = lst.add(273.15);
+    var lst_origional = lst_kelvin.subtract(149).divide(0.00341802);
+    return image.addBands(lst_origional.rename('GEMLST_Landsat_uint16'));
+}
+
+daily_multiSat = daily_multiSat.map(convertToLandsat);
+
 // optional feature: visualize the average LST for the region of interest 
 // and compare the original and calibrated LST images
 var temp_origional = multiSat.select('ST_B10').mean().clip(roi);
@@ -264,12 +276,12 @@ makeLegend();
 // batch export image collection to Google Drive
 var batch = require('users/fitoprincipe/geetools:batch');
 
-batch.Download.ImageCollection.toDrive(daily_multiSat.select('GEMLST_Landsat'),
+batch.Download.ImageCollection.toDrive(daily_multiSat.select('GEMLST_Landsat_uint16'),
   'disko',
   {scale: 30, 
    crs: 'EPSG:3413',
    region: roi, 
-   type: 'double',
+   type: 'uint16',
    maxPixels: 1e13,
    name: 'GEMLST_Landsat_{system_date}'
   //  dateFormat: 'yyyy-MM-dd_HH-mm-ss',
