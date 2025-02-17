@@ -136,14 +136,53 @@ def plot_single_station(df, aws, ax):
     print(f"R-value: {r_value:.3f}")
     print(f"R-squared: {r_value**2:.3f}")
 
+def create_time_series_plots(df):
+    """Create time series plots for each AWS station."""
+    unique_aws = df['aws'].unique()
+    n_aws = len(unique_aws)
+    n_cols = 2  # Adjust as needed
+    n_rows = (n_aws + n_cols - 1) // n_cols
+
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 5 * n_rows), sharex=True)
+    axes = axes.flatten()
+
+    for idx, aws in enumerate(unique_aws):
+        plot_time_series(df, aws, axes[idx])
+
+    # Remove empty subplots
+    for idx in range(len(unique_aws), len(axes)):
+        fig.delaxes(axes[idx])
+
+    plt.tight_layout()
+    return fig
+
+def plot_time_series(df, aws, ax):
+    """Plot time series for a single AWS station."""
+    aws_data = df[df['aws'] == aws].sort_values('Date')
+
+    # Plot AWS data as a line
+    ax.plot(aws_data['Date'], aws_data['temperature'], marker='', linestyle='-', color='blue', label='AWS Temperature')
+
+    # Plot Landsat data as scatter points
+    ax.scatter(aws_data['Date'], aws_data['ST_B10'], marker='o', color='red', label='Landsat LST', alpha=0.7)
+
+    # Customize plot
+    ax.set_title(f'AWS: {aws}')
+    ax.set_ylabel('Temperature (°C)')
+    ax.set_xlabel('Date')
+    ax.legend()
+    ax.grid(True)
+
 def main():
     """Main function to run the analysis."""
     setup_plotting_style()
     
     # File paths
-    aws_path = '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/aws_temperature.csv'
-    landsat_path = '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/GEM_AWS_LandsatLST.csv'
-    
+    # aws_path = '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/aws_temperature.csv'
+    # landsat_path = '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/GEM_AWS_LandsatLST.csv'
+    aws_path = '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/TOMST_temperature.csv'
+    landsat_path = '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/TOMST_AWS_LandsatLST.csv'
+
     # Load and process data
     df = load_and_preprocess_data(aws_path, landsat_path)
     
@@ -152,6 +191,10 @@ def main():
     plt.show()
     
     create_station_subplots(df)
+    plt.show()
+
+    # Create time series plots
+    time_series_fig = create_time_series_plots(df)
     plt.show()
 
 if __name__ == "__main__":

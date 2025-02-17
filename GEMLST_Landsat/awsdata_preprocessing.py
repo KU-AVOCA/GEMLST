@@ -79,6 +79,14 @@ awslist = {
         'time_zone': 'UTC-3',
         'temp_var': 'Ground surface temperature_°C'
     },
+    'Disko_AWS2': {
+        'lat': 69.25348663330078,
+        'lon': -53.514129638671875, 
+        'filepath': '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/AWS/3_Disko/1_ClimateData/AWS2-Meteorology_10.17897_CSZT-F010/AWS2-Meteorology_10.17897_CSZT-F010_data.txt',
+        'temp_unit': 'celcius',
+        'time_zone': 'UTC-3',
+        'temp_var': 'Ground temperature_°C'
+    },
     'Zackenberg_M2': {
         'lat': 74.46549224853516,
         'lon': -20.563194274902344,
@@ -145,7 +153,7 @@ for i in range(awslist.shape[0]):
     df['aws'] = awslist.loc[i, 'aws']
     df = df[['Date', 'temperature', 'aws']]  # Select only needed columns
     # Resample to hourly averages
-    df = df.set_index('Date').resample('H').agg({
+    df = df.set_index('Date').resample('h').agg({
         'temperature': 'mean',
         'aws': 'first'
     }).reset_index()
