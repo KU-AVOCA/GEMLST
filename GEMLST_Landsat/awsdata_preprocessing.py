@@ -117,7 +117,8 @@ awslist = pd.DataFrame.from_dict(awslist, orient='index')
 awslist = awslist.reset_index().rename(columns={'index': 'aws'})
 awslist['date_start'] = pd.to_datetime('')
 awslist['date_end'] = pd.to_datetime('')
-
+# Export the AWS list to a CSV file
+awslist.to_csv('/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/AWS/aws_stations.csv', index=False)
 # %% check the date range of each AWS station and save the
 #  temperature to a new CSV file.
 for i in range(awslist.shape[0]):

@@ -1,38 +1,34 @@
-'''
-"""
-This script performs an evaluation of Landsat Land Surface Temperature (LST) data
-by comparing it with in-situ temperature measurements from Automatic Weather Stations (AWS).
-It includes functions for data loading, preprocessing, merging, and visualization,
-with a focus on regression analysis to assess the relationship between Landsat LST
-and AWS temperatures.
-The script generates overall regression plots and individual station subplots
-to provide a comprehensive comparison.
-
-Author: Shunan Feng
-"""
-
-'''
-#%%
+#%% 
 import pandas as pd
-import seaborn as sns
-from scipy import stats
 import matplotlib.pyplot as plt
+from scipy import stats
+import seaborn as sns
+# sns.set_theme(style="darkgrid", font_scale=1.5)
 
+# #%% load data
+# fileaws = '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/aws_temperature.csv'
+# fileera5 = '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/ERA5/GEM_AWS_ERA5Land.csv'
+
+# dfaws = pd.read_csv(fileaws)
+# dfera5 = pd.read_csv(fileera5)
+# #%%
+# dfera5['time'] = pd.to_datetime(dfera5['timestamp'], unit='ms')
+# # %%
 #%% 
 def setup_plotting_style():
     """Set up the default plotting style."""
     sns.set_theme(style="darkgrid", font_scale=1.5)
-
 def load_and_preprocess_data(aws_path, landsat_path):
-    """Load and preprocess AWS and Landsat data."""
+    """Load and preprocess AWS and ERA5 Land data."""
     # Load data
     aws_data = pd.read_csv(aws_path)
-    landsat_data = pd.read_csv(landsat_path)
-    
-    # Process Landsat data
-    landsat_data['Date'] = pd.to_datetime(landsat_data['system:time_start'], unit='ms')
-    landsat_data['date'] = landsat_data['Date']
-    landsat_data = landsat_data.rename(columns={'id': 'aws'})
+    era5_data = pd.read_csv(landsat_path)
+    era5_data['skin_temperature'] = era5_data['skin_temperature'] - 273.15
+
+    # Process ERA5 Land data
+    era5_data['Date'] = pd.to_datetime(era5_data['timestamp'], unit='ms')
+    era5_data['date'] = era5_data['Date']
+    era5_data = era5_data.rename(columns={'id': 'aws'})
     
     # Process AWS data
     aws_data['Date'] = pd.to_datetime(aws_data['Date'])
@@ -42,7 +38,7 @@ def load_and_preprocess_data(aws_path, landsat_path):
     # Merge data
     df = pd.merge_asof(
         aws_data.sort_values('Date'), 
-        landsat_data.sort_values('Date'), 
+        era5_data.sort_values('Date'), 
         on='Date', by='aws', direction='nearest', 
         allow_exact_matches=False, 
         tolerance=pd.Timedelta(hours=1)
@@ -51,29 +47,29 @@ def load_and_preprocess_data(aws_path, landsat_path):
     return df.dropna()
 
 def create_overall_regression_plot(df):
-    """Create overall regression plot comparing Landsat and AWS temperatures."""
+    """Create overall regression plot comparing ERA5 Land and AWS temperatures."""
     fig, ax = plt.subplots(figsize=(10, 10))
     
     # Calculate regression statistics
     slope, intercept, r_value, p_value, std_err = stats.linregress(
-        df['ST_B10'], df['temperature']
+        df['skin_temperature'], df['temperature']
     )
     
     # Create scatter plot with regression line
-    sns.scatterplot(ax=ax, data=df, x='ST_B10', y='temperature', hue='aws', alpha=0.5)
-    sns.regplot(ax=ax, data=df, x='ST_B10', y='temperature', 
+    sns.scatterplot(ax=ax, data=df, x='skin_temperature', y='temperature', hue='aws', alpha=0.5)
+    sns.regplot(ax=ax, data=df, x='skin_temperature', y='temperature', 
                 scatter=False, color='red')
     
     # Add 1:1 reference line
-    min_val = min(df['ST_B10'].min(), df['temperature'].min())
-    max_val = max(df['ST_B10'].max(), df['temperature'].max())
+    min_val = min(df['skin_temperature'].min(), df['temperature'].min())
+    max_val = max(df['skin_temperature'].max(), df['temperature'].max())
     ax.plot([min_val, max_val], [min_val, max_val], '--', color='gray', alpha=0.8)
     
     # Customize plot
     ax.set_aspect('equal')
     plt.ylabel('AWS Temperature (°C)')
-    plt.xlabel('Landsat LST (°C)')
-    plt.title('Landsat vs AWS Temperature Comparison')
+    plt.xlabel('ERA5 Land LST (°C)')
+    plt.title('ERA5 Land vs AWS Temperature Comparison')
     
     # Print statistics
     print(f"Regression Statistics:")
@@ -110,22 +106,22 @@ def plot_single_station(df, aws, ax):
     
     # Calculate regression statistics
     slope, intercept, r_value, p_value, std_err = stats.linregress(
-        aws_data['ST_B10'], aws_data['temperature']
+        aws_data['skin_temperature'], aws_data['temperature']
     )
     
     # Create plots
-    sns.scatterplot(data=aws_data, x='ST_B10', y='temperature', ax=ax, alpha=0.5)
-    sns.regplot(data=aws_data, x='ST_B10', y='temperature', 
+    sns.scatterplot(data=aws_data, x='skin_temperature', y='temperature', ax=ax, alpha=0.5)
+    sns.regplot(data=aws_data, x='skin_temperature', y='temperature', 
                 scatter=False, color='red', ax=ax)
     
     # Add 1:1 line
-    min_val = min(aws_data['ST_B10'].min(), aws_data['temperature'].min())
-    max_val = max(aws_data['ST_B10'].max(), aws_data['temperature'].max())
+    min_val = min(aws_data['skin_temperature'].min(), aws_data['temperature'].min())
+    max_val = max(aws_data['skin_temperature'].max(), aws_data['temperature'].max())
     ax.plot([min_val, max_val], [min_val, max_val], '--', color='gray', alpha=0.8)
     
     # Customize plot
     ax.set_title(f'AWS: {aws}')
-    ax.set_xlabel('Landsat LST (°C)')
+    ax.set_xlabel('ERA5 Land LST (°C)')
     ax.set_ylabel('AWS Temperature (°C)')
     ax.set_aspect('equal')
     
@@ -163,8 +159,8 @@ def plot_time_series(df, aws, ax):
     # Plot AWS data as a line
     ax.plot(aws_data['Date'], aws_data['temperature'], marker='', linestyle='-', color='blue', label='AWS Temperature')
 
-    # Plot Landsat data as scatter points
-    ax.scatter(aws_data['Date'], aws_data['ST_B10'], marker='o', color='red', label='Landsat LST', alpha=0.7)
+    # Plot ERA5 Land data as scatter points
+    ax.scatter(aws_data['Date'], aws_data['skin_temperature'], marker='o', color='red', label='ERA5 Land LST', alpha=0.7)
 
     # Customize plot
     ax.set_title(f'AWS: {aws}')
@@ -179,7 +175,7 @@ def main():
     
     # File paths
     aws_path = '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/aws_temperature.csv'
-    landsat_path = '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/GEM_AWS_LandsatLST.csv'
+    landsat_path = '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/ERA5/GEM_AWS_ERA5Land.csv'
     # aws_path = '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/TOMST_temperature.csv'
     # landsat_path = '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/TOMST_AWS_LandsatLST.csv'
 
@@ -199,5 +195,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 # %%
