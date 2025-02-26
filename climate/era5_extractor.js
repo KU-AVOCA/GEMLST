@@ -1,5 +1,5 @@
 /*
-This script extracts Landsat LST USGS products for GEM AWS stations.
+This script extracts ERA5 Land data for GEM AWS stations.
 */
 
 // a list of points for GEM AWS stations with temperature data
@@ -67,11 +67,16 @@ var awsPoints = ee.FeatureCollection([
 // ]);
 Map.addLayer(awsPoints, {color: 'red'}, 'AWS Points');
 
-var date_start = ee.Date.fromYMD(2001, 1, 1),
+var date_start = ee.Date.fromYMD(2000, 1, 1),
     date_end = ee.Date.fromYMD(2024, 12, 31);
 
-var ERA5Land = ee.ImageCollection('ECMWF/ERA5_LAND/HOURLY')
-    .select('surface_net_solar_radiation', 'skin_temperature')
+var ERA5Land = ee.ImageCollection("ECMWF/ERA5_LAND/DAILY_AGGR")
+    .select(
+      ['skin_temperature', 'temperature_2m', 'soil_temperature_level_1', 'temperature_of_snow_layer',
+        'surface_net_solar_radiation_sum', 'snow_albedo', 'snow_cover', 'snow_density', 'snow_depth',
+        'forecast_albedo'
+      ]
+    )// .select('surface_net_solar_radiation', 'skin_temperature')
     .filterDate(date_start, date_end)
     .filterBounds(awsPoints);
 /* extract LST data for each AWS station  

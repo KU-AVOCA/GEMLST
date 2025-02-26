@@ -87,7 +87,7 @@ awslist.index.name = 'awsname'
 awslist = awslist.reset_index()
 awslist['geometry'] = gpd.points_from_xy(awslist.lon, awslist.lat)
 #%%
-filepath = "/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/CARRA/CARRA.grib"
+filepath = "/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/CARRA/CARRA_skintemp.grib"
 ds = xr.open_dataset(filepath, engine='cfgrib', backend_kwargs={'indexpath': ''}, chunks='auto')
 
 
@@ -95,9 +95,9 @@ ds = xr.open_dataset(filepath, engine='cfgrib', backend_kwargs={'indexpath': ''}
 # output_path = "/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/CARRA/CARRA_grib2nc.nc"
 # ds.to_netcdf(output_path)
 #%%
-def extract_carra_data(ds, aws_df):
+def extract_carra_data(ds, aws_df, method='linear'):
     """
-    Extract skin temperature time series for AWS locations.
+    Extract skin temperature time series for AWS locations using interpolation.
     
     Parameters:
     -----------
@@ -105,38 +105,50 @@ def extract_carra_data(ds, aws_df):
         CARRA dataset with skt variable
     aws_df : GeoDataFrame
         DataFrame containing AWS locations with 'lat', 'lon', and 'awsname' columns
+    method : str, optional
+        Interpolation method: 'linear', 'nearest', 'cubic', default is 'linear'
     
     Returns:
     --------
     pandas.DataFrame
-        Time series of skin temperature for each AWS location
+        Time series of interpolated skin temperature for each AWS location
     """
     # Initialize empty dictionary to store time series for each AWS
     skt_series = {}
     
-    # Convert CARRA dataset to GeoDataFrame
-    carra_points = ds.stack(point=('y', 'x')).reset_index('point')
-    carra_points['lon'] = ds['longitude'].stack(point=('y', 'x'))
-    carra_points['lat'] = ds['latitude'].stack(point=('y', 'x'))
-    carra_points = carra_points.to_dataframe().reset_index()
-    carra_points = gpd.GeoDataFrame(carra_points, geometry=gpd.points_from_xy(carra_points.lon, carra_points.lat), crs="EPSG:4326")
+    # Get the coordinates from the CARRA dataset
+    lons = ds.longitude.values
+    lats = ds.latitude.values
     
     # Extract time series for each AWS location
     for _, aws in aws_df.iterrows():
-        # Find the nearest CARRA grid point
-        tree = cKDTree(carra_points[['lat', 'lon']])
-        _, index = tree.query([aws['lat'], aws['lon']])
-        nearest_point = carra_points.iloc[index]
+        aws_name = aws['awsname']
+        aws_lat = aws['lat']
+        aws_lon = aws['lon']
         
-        # Select the nearest grid point from the original dataset
-        ds_point = ds.sel(y=nearest_point['y'], x=nearest_point['x'])
+        print(f"Extracting time series for {aws_name} at {aws_lat}, {aws_lon}")
         
-        # Extract skt time series and name it with AWS name
-        ts = ds_point['skt'].to_series()
-        ts.name = aws['awsname']
-        skt_series[aws['awsname']] = ts
+        # Find the four nearest grid points for interpolation
+        # First, create 2D arrays of lat/lon differences to find closest points
+        lat_diff = np.abs(lats - aws_lat)
+        lon_diff = np.abs(lons - aws_lon)
         
-        print(f"Extracted time series for {aws['awsname']}")
+        # Get the indices of the AWS location in the CARRA grid using interpolation
+        try:
+            # Use xarray's interpolation method
+            ts = ds.skt.interp(latitude=aws_lat, longitude=aws_lon, method=method)
+            ts = ts.to_series()
+            ts.name = aws_name
+            skt_series[aws_name] = ts
+            print(f"Successfully interpolated data for {aws_name}")
+        except Exception as e:
+            print(f"Error interpolating data for {aws_name}: {e}")
+            # Fallback to nearest neighbor if interpolation fails
+            y_idx, x_idx = np.unravel_index(np.argmin(lat_diff**2 + lon_diff**2), lat_diff.shape)
+            print(f"Falling back to nearest neighbor at grid point y={y_idx}, x={x_idx}")
+            ts = ds.skt.isel(y=y_idx, x=x_idx).to_series()
+            ts.name = aws_name
+            skt_series[aws_name] = ts
     
     # Combine all time series into a single DataFrame
     df = pd.DataFrame(skt_series)
@@ -146,11 +158,11 @@ def extract_carra_data(ds, aws_df):
     
     return df
 
-# Extract data
-carra_data = extract_carra_data(ds, awslist)
+# Extract data with linear interpolation
+carra_data = extract_carra_data(ds, awslist, method='linear')
 
-# Save to CSV (optional)
-output_path = "/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/CARRA/CARRA_aws_skt.csv"
+# Save to CSV
+output_path = "/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/CARRA/CARRA_aws_skt_interpolated.csv"
 carra_data.to_csv(output_path, index=False)
 
 # %%
