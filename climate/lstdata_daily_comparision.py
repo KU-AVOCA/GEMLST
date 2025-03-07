@@ -187,7 +187,7 @@ def main():
     df = load_and_preprocess_data(aws_path, era5_path)
     
     # Specify ERA5 variable for analysis
-    era5_variable = 'soil_temperature_level_1'  # 'temperature_2m', 'skin_temperature', 'temperature_of_snow_layer', or 'soil_temperature_level_1'
+    era5_variable = 'temperature_2m'  # 'temperature_2m', 'skin_temperature', 'temperature_of_snow_layer', or 'soil_temperature_level_1'
     
     # Create plots
     create_overall_regression_plot(df, era5_variable)
