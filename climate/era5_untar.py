@@ -1,23 +1,26 @@
 """
 Script to extract all tar files from a source directory to a target directory.
 Simply modify the source_dir and target_dir variables below to specify your folders.
+This script shows progress for both overall extraction and for individual files within each tar.
 """
-#%%
+
 import os
 import tarfile
 from pathlib import Path
 import sys
 from tqdm import tqdm
-#%%
+
 # ===== CONFIGURE THESE PATHS =====
-source_dir = "/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/1_Simon/1_Abisko/6_Tower_Data/Tower Thermal images/1 Data"  # Change this to your source folder path
-target_dir =  "/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/1_Simon/1_Abisko/6_Tower_Data/Tower Thermal images/2_Extracted_Data_Shunan"  # Change this to your target folder path
+source_dir = "/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/data/GEMLST_MODIS/ERA5"  # Change this to your source folder path
+target_dir = "/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/data/GEMLST_MODIS/ERA5"   # Change this to your target folder path
 # =================================
-#%%
+
 def untar_files(source_dir, target_dir):
     """
     Recursively find and extract all .tar files from source_dir to target_dir
-    while preserving the folder structure and showing a progress bar.
+    while preserving the folder structure and showing nested progress bars:
+    - Outer progress bar for all tar files
+    - Inner progress bar for files within each tar
     """
     source_dir = Path(source_dir).resolve()
     target_dir = Path(target_dir).resolve()
@@ -47,16 +50,31 @@ def untar_files(source_dir, target_dir):
     # Now extract each file with a progress bar
     print(f"Found {len(tar_files)} tar files. Beginning extraction...")
     
+    # Outer progress bar for all tar files
     for tar_path, extract_dir in tqdm(tar_files, desc="Extracting tar files"):
         # Create extract directory if it doesn't exist
         extract_dir.mkdir(parents=True, exist_ok=True)
         
-        # Extract the tar file
+        # Extract the tar file with progress for internal files
         try:
             with tarfile.open(tar_path) as tar:
-                tar.extractall(path=extract_dir, filter='fully_trusted')
+                # Get list of members
+                members = tar.getmembers()
+                num_files = len(members)
+                
+                # Display tar file name
+                tar_name = tar_path.name
+                print(f"\nExtracting {tar_name} ({num_files} files)")
+                
+                # Inner progress bar for files within this tar
+                for member in tqdm(members, desc=f"Files in {tar_name}", leave=False):
+                    try:
+                        tar.extract(member, path=extract_dir, filter='data')
+                    except Exception as e:
+                        print(f"  Error extracting '{member.name}': {e}", file=sys.stderr)
+                
         except Exception as e:
-            print(f"Error extracting '{tar_path}': {e}", file=sys.stderr)
+            print(f"Error opening tar file '{tar_path}': {e}", file=sys.stderr)
     
     print(f"Extraction complete! Processed {len(tar_files)} tar files")
     return True

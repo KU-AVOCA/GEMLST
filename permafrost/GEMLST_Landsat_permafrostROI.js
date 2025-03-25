@@ -201,6 +201,20 @@ var exportArcticDem = function(roi, description) {
   });
 };
 
+// Define a function to export the mask data for a given ROI.
+var exportMask = function(roi, description) {
+  Export.image.toDrive({
+    image: greenlandmask,
+    description: description,
+    folder: 'gee', 
+    fileNamePrefix: 'GreenlandMask_' + description,
+    region: roi,
+    scale: 30,  
+    crs: 'EPSG:3413', 
+    maxPixels: 1e13
+  });
+};
+
 // Export ArcticDEM for each ROI.
 exportArcticDem(roi_disko, 'Disko');
 exportArcticDem(roi_kobbefjord, 'Kobbefjord');
@@ -210,3 +224,13 @@ exportArcticDem(roi_ilulissat, 'Ilulissat');
 exportArcticDem(roi_nuuk, 'Nuuk');
 exportArcticDem(roi_qaanaaq, 'Qaanaaq');
 exportArcticDem(roi_aasiaat, 'Aasiaat');
+
+// Export mask for each ROI.
+exportMask(roi_disko, 'Disko');
+exportMask(roi_kobbefjord, 'Kobbefjord');
+exportMask(roi_zackenberg, 'Zackenberg');
+exportMask(roi_kangerlussuaq, 'Kangerlussuaq');
+exportMask(roi_ilulissat, 'Ilulissat');
+exportMask(roi_nuuk, 'Nuuk');
+exportMask(roi_qaanaaq, 'Qaanaaq');
+exportMask(roi_aasiaat, 'Aasiaat');
