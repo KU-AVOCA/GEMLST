@@ -122,15 +122,15 @@ function calibrateLST(image) {
             .updateMask(greenland_landmask).rename('ST_B10_land');
   
   // Apply ocean calibration: y = 0.7212493050563921*x + 1.4461030886482544
-  var lst_ocean = lst.multiply(0.7212493050563921).add(1.4461030886482544);
+  var lst_ocean = lst.multiply(0.7212493050563921).add(1.4461030886482544)
+             .updateMask(greenland_oceanmask).rename('ST_B10_ocean');
   
   // For ice areas, keep the original values
   var lst_ice = lst.updateMask(greenland_icemask).rename('ST_B10_ice');
   
   // Combine the calibrated images
-  var lst_calibrated = lst_ocean.where(greenland_landmask, lst_land)
-                              .where(greenland_icemask, lst_ice);
-
+  var lst_calibrated = lst_land.unmask().add(lst_ocean.unmask()).add(lst_ice.unmask());
+  
   // Add the calibrated band to the image
   return image.addBands(lst_calibrated.rename('GEMEST_Landsat'))
               .addBands(lst, null, true);
@@ -146,33 +146,33 @@ var colFilter = ee.Filter.and(
 var oli2Col = ee.ImageCollection('LANDSAT/LC09/C02/T1_L2') 
     .filter(colFilter) 
     .map(renameOli)
-    .map(maskL8sr)
-    .map(calibrateLST);
+    .map(calibrateLST)
+    .map(maskL8sr);
 
 var oliCol = ee.ImageCollection('LANDSAT/LC08/C02/T1_L2') 
     .filter(colFilter) 
     .map(renameOli)
-    .map(maskL8sr)
-    .map(calibrateLST);
+    .map(calibrateLST)
+    .map(maskL8sr);
 
 var etmCol = ee.ImageCollection('LANDSAT/LE07/C02/T1_L2') 
     .filter(colFilter) 
     .filter(ee.Filter.calendarRange(1999, 2020, 'year')) // filter out L7 imagaes acquired after 2020 due to orbit drift
     .map(renameEtm)
-    .map(maskL457sr)
-    .map(calibrateLST); 
+    .map(calibrateLST)
+    .map(maskL457sr); 
 
 var tmCol = ee.ImageCollection('LANDSAT/LT05/C02/T1_L2') 
     .filter(colFilter) 
     .map(renameEtm)
-    .map(maskL457sr)
-    .map(calibrateLST);
+    .map(calibrateLST)
+    .map(maskL457sr);
 
 var tm4Col = ee.ImageCollection('LANDSAT/LT04/C02/T1_L2') 
     .filter(colFilter) 
     .map(renameEtm)
-    .map(maskL457sr)
-    .map(calibrateLST); 
+    .map(calibrateLST)
+    .map(maskL457sr); 
 
 var multiSat = oliCol.merge(etmCol).merge(tmCol).merge(tm4Col).merge(oli2Col);
 
@@ -228,70 +228,70 @@ var visParam = {min: -20, max: 20, palette: surfTpallete};
 Map.addLayer(temp_origional, visParam, 'LST_Origional');
 Map.addLayer(temp_calibrated, visParam, 'GEMEST_Landsat');
 
-// Create a color bar for the map
-var colorBar = ui.Thumbnail({
-    image: ee.Image.pixelLonLat().select(0),
-    params: {
-        bbox: [0, 0, 1, 0.1],
-        dimensions: '300x20',
-        format: 'png',
-        min: 0,
-        max: 1,
-        palette: visParam.palette
-    },
-    style: {position: 'bottom-right', margin: '0px 0px 30px 0px'}
-});
+// // Create a color bar for the map
+// var colorBar = ui.Thumbnail({
+//     image: ee.Image.pixelLonLat().select(0),
+//     params: {
+//         bbox: [0, 0, 1, 0.1],
+//         dimensions: '300x20',
+//         format: 'png',
+//         min: 0,
+//         max: 1,
+//         palette: visParam.palette
+//     },
+//     style: {position: 'bottom-right', margin: '0px 0px 30px 0px'}
+// });
 
-// Add a title to the colorbar
-var colorBarTitle = ui.Label({
-    value: 'LST (°C)',
-    style: {
-        position: 'bottom-right',
-        fontSize: '12px',
-        margin: '0px 0px 0px 0px',
-        textAlign: 'center',
-        stretch: 'horizontal'
-    }
-});
+// // Add a title to the colorbar
+// var colorBarTitle = ui.Label({
+//     value: 'LST (°C)',
+//     style: {
+//         position: 'bottom-right',
+//         fontSize: '12px',
+//         margin: '0px 0px 0px 0px',
+//         textAlign: 'center',
+//         stretch: 'horizontal'
+//     }
+// });
 
-// Create panel for colorbar legend
-var legendPanel = ui.Panel({
-  style: {
-    position: 'bottom-right',
-    padding: '8px 15px'
-  }
-});
+// // Create panel for colorbar legend
+// var legendPanel = ui.Panel({
+//   style: {
+//     position: 'bottom-right',
+//     padding: '8px 15px'
+//   }
+// });
 
-// Function to generate the legend
-function makeLegend() {
-  legendPanel.clear();
+// // Function to generate the legend
+// function makeLegend() {
+//   legendPanel.clear();
 
-  var legendTitle = ui.Label({
-    value: 'LST (°C)',
-    style: {
-      fontWeight: 'bold',
-      fontSize: '14px',
-      margin: '0 0 4px 0',
-      padding: '0'
-    }
-  });
-  legendPanel.add(legendTitle);
+//   var legendTitle = ui.Label({
+//     value: 'LST (°C)',
+//     style: {
+//       fontWeight: 'bold',
+//       fontSize: '14px',
+//       margin: '0 0 4px 0',
+//       padding: '0'
+//     }
+//   });
+//   legendPanel.add(legendTitle);
 
-  // Create and add the color bar
-  legendPanel.add(colorBar);
+//   // Create and add the color bar
+//   legendPanel.add(colorBar);
 
-  // Create min and max labels
-  var minMaxPanel = ui.Panel({
-    widgets: [
-      ui.Label(visParam.min, {margin: '4px 8px'}),
-      ui.Label(visParam.max, {margin: '4px 8px', textAlign: 'right', stretch: 'horizontal'})
-    ],
-    layout: ui.Panel.Layout.flow('horizontal')
-  });
-  legendPanel.add(minMaxPanel);
+//   // Create min and max labels
+//   var minMaxPanel = ui.Panel({
+//     widgets: [
+//       ui.Label(visParam.min, {margin: '4px 8px'}),
+//       ui.Label(visParam.max, {margin: '4px 8px', textAlign: 'right', stretch: 'horizontal'})
+//     ],
+//     layout: ui.Panel.Layout.flow('horizontal')
+//   });
+//   legendPanel.add(minMaxPanel);
 
-  Map.add(legendPanel);
-}
+//   Map.add(legendPanel);
+// }
 
 // makeLegend();
 
