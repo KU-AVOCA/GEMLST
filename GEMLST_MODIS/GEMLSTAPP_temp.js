@@ -819,10 +819,9 @@ var logoPanel = ui.Panel(thumb, 'flow', {width: '300px'});
 inspectorPanel.widgets().set(6, logoPanel);
 
 var logoIntro = ui.Panel([
-  ui.Label("The project is part of the Greenland Environmental Monitoring (GEM) program, funded by the Danish Ministry of Energy, Utilities and Climate. The project is hosted by the Department of Geosciences and Natural Resource Management, University of Copenhagen.  It is also supported by Villum Foundation (project No. 42069)."),
+  ui.Label("Developed and maintained by Shunan Feng and Andreas Westergaard-Nielsen. The project is part of the Greenland Environmental Monitoring (GEM) program, funded by the Danish Ministry of Energy, Utilities and Climate. The project is hosted by the Department of Geosciences and Natural Resource Management, University of Copenhagen.  It is also supported by Villum Foundation (project No. 42069)."),
   ui.Label("https://g-e-m.dk/", {}, "https://g-e-m.dk/"),
-//   ui.Label("https://github.com/fsn1995/Remote-Sensing-of-Albedo", {}, "https://github.com/fsn1995/Remote-Sensing-of-Albedo"),
+  ui.Label("https://github.com/KU-AVOCA/GEMLST", {}, "https://github.com/KU-AVOCA/GEMLST"),
 //   ui.Label("Feng, S., Cook, J. M., Anesio, A. M., Benning, L. G. and Tranter, M. (2023) “Long time series (1984–2020) of albedo variations on the Greenland ice sheet from harmonized Landsat and Sentinel 2 imagery,” Journal of Glaciology. Cambridge University Press, 69(277), pp. 1225–1240. doi: 10.1017/jog.2023.11.", {}, "https://doi.org/10.1017/jog.2023.11"),
 //   ui.Label("Feng, S., Cook, J. M., Onuma, Y., Naegeli, K., Tan, W., Anesio, A. M., Benning, L. G., & Tranter, M. (2023). Remote sensing of ice albedo using harmonized Landsat and Sentinel 2 datasets: validation. International Journal of Remote Sensing, 00(00), 1–29. https://doi.org/10.1080/01431161.2023.2291000", {}, "https://doi.org/10.1080/01431161.2023.2291000")
 ]);
-inspectorPanel.widgets().set(7, logoIntro);
