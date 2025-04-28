@@ -3,40 +3,68 @@ This script extracts Landsat LST USGS products for GEM AWS stations.
 */
 
 // a list of points for GEM AWS stations with temperature data
+// var awsPoints = ee.FeatureCollection([
+//     // Kobbefjord
+//     ee.Feature(ee.Geometry.Point([-51.37199020385742, 64.12248229980469]), {
+//         id: 'Kobbefjord_M500'
+//     }),
+    
+//     // Disko
+//     ee.Feature(ee.Geometry.Point([-53.479400634765625, 69.27300262451172]), {
+//         id: 'Disko_T1'
+//     }),
+//     ee.Feature(ee.Geometry.Point([-53.43281936645508, 69.28909301757812]), {
+//         id: 'Disko_T2'
+//     }),
+//     ee.Feature(ee.Geometry.Point([-53.45709991455078, 69.2767105102539]), {
+//         id: 'Disko_T3'
+//     }),
+//     ee.Feature(ee.Geometry.Point([-53.49897003173828, 69.25126647949219]), {
+//         id: 'Disko_T4'
+//     }),
+    
+//     // Zackenberg
+//     ee.Feature(ee.Geometry.Point([-20.563194274902344, 74.46549224853516]), {
+//         id: 'Zackenberg_M2'
+//     }),
+//     ee.Feature(ee.Geometry.Point([-20.459354400634766, 74.50310516357422]), {
+//         id: 'Zackenberg_M3'
+//     }),
+//     ee.Feature(ee.Geometry.Point([-20.552143096923828, 74.47307586669922]), {
+//         id: 'Zackenberg_M4_30min'
+//     })
+// ]);
+// a list of points for TOMST sensor locations
 var awsPoints = ee.FeatureCollection([
-    // Kobbefjord
-    ee.Feature(ee.Geometry.Point([-51.37199020385742, 64.12248229980469]), {
-        id: 'Kobbefjord_M500'
-    }),
-    
-    // Disko
-    ee.Feature(ee.Geometry.Point([-53.479400634765625, 69.27300262451172]), {
-        id: 'Disko_T1'
-    }),
-    ee.Feature(ee.Geometry.Point([-53.43281936645508, 69.28909301757812]), {
-        id: 'Disko_T2'
-    }),
-    ee.Feature(ee.Geometry.Point([-53.45709991455078, 69.2767105102539]), {
-        id: 'Disko_T3'
-    }),
-    ee.Feature(ee.Geometry.Point([-53.49897003173828, 69.25126647949219]), {
-        id: 'Disko_T4'
-    }),
-    
-    // Zackenberg
-    ee.Feature(ee.Geometry.Point([-20.563194274902344, 74.46549224853516]), {
-        id: 'Zackenberg_M2'
-    }),
-    ee.Feature(ee.Geometry.Point([-20.459354400634766, 74.50310516357422]), {
-        id: 'Zackenberg_M3'
-    }),
-    ee.Feature(ee.Geometry.Point([-20.552143096923828, 74.47307586669922]), {
-        id: 'Zackenberg_M4_30min'
-    })
+  // TOMST2
+  ee.Feature(ee.Geometry.Point([-53.51418, 69.25349]), {
+      id: 'TOMST2',
+      raw_identifier: 94204541
+  }),
+  // TOMST3
+  ee.Feature(ee.Geometry.Point([-53.467324, 69.265525]), {
+      id: 'TOMST3',
+      raw_identifier: 94204542
+  }),
+  // TOMST-T2-15
+  ee.Feature(ee.Geometry.Point([-53.4328202, 69.289089]), {
+      id: 'TOMST-T2-15',
+      raw_identifier: 94232447
+  }),
+  // TOMST4-15
+  ee.Feature(ee.Geometry.Point([-53.45363, 69.27282]), {
+      id: 'TOMST4-15',
+      raw_identifier: 94232448
+  }),
+  // TOMST4-30
+  ee.Feature(ee.Geometry.Point([-53.45363, 69.27282]), {
+      id: 'TOMST4-30',
+      raw_identifier: 94229981
+  })
 ]);
 Map.addLayer(awsPoints, {color: 'red'}, 'AWS Points');
 
-var date_start = ee.Date.fromYMD(2003, 1, 1),
+var date_start = ee.Date.fromYMD(2020, 1, 1),
     date_end = ee.Date.fromYMD(2024, 12, 31);
 
 /*

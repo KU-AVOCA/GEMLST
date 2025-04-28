@@ -44,6 +44,7 @@ landsat_data = pd.read_csv(landsat_path)
 landsat_data['Date'] = pd.to_datetime(landsat_data['system:time_start'], unit='ms')
 landsat_data['date'] = landsat_data['Date']
 landsat_data = landsat_data.rename(columns={'id': 'aws'})
+landsat_data['aws'] = landsat_data['aws'].replace('Zackenberg_M4_30min', 'Zackenberg_M4')
 
 # Process AWS data
 aws_data['Date'] = pd.to_datetime(aws_data['Date'])
@@ -149,4 +150,15 @@ for i, (aws_name, aws_data) in enumerate(grouped):
 
 plt.tight_layout()
 plt.show()
+# %%
+# Save calibration model parameters to a file
+model_params = {
+    'coefficient': model.coef_[0],
+    'intercept': model.intercept_,
+    'r_squared': model.score(test_df[['ST_B10']], test_df['temperature'])
+}
+
+pd.DataFrame([model_params]).to_csv('landsat_calibration_parameters.txt', index=False)
+print("\nCalibration model parameters saved to 'landsat_calibration_parameters.txt'")
+
 # %%

@@ -1,5 +1,5 @@
 /**
- * @file GEMLST_Landsat_GEEapp.js
+ * @file GEMEST_Landsat_GEEapp.js
  * @description This Earth Engine App visualizes and analyzes Landsat surface temperature data for Greenland, incorporating data harmonization, cloud masking, and calibration techniques.
  * It allows users to explore time series data, view temperature maps, and download data for specific locations and time periods.
  * The app integrates ArcticDEM for topographic context and provides tools for selecting date ranges and visualizing Landsat imagery.
@@ -23,7 +23,20 @@ Shunna Feng (shunan.feng@envs.au.dk)
  */
 
 var greenlandmask = ee.Image('OSU/GIMP/2000_ICE_OCEAN_MASK')
-                        .select('ocean_mask').multiply(0).add(1); // Convert to all 1s while keeping extent
+                        .select('ocean_mask').multiply(0).add(1); 
+var greenland_landmask = ee.Image('OSU/GIMP/2000_ICE_OCEAN_MASK')
+                        .select('ocean_mask').eq(0).and(
+                          ee.Image('OSU/GIMP/2000_ICE_OCEAN_MASK')
+                          .select('ice_mask').eq(0)); // 
+
+var greenland_icemask = ee.Image('OSU/GIMP/2000_ICE_OCEAN_MASK')
+                        .select('ice_mask').eq(1);  
+// var greenland_oceanmask = ee.Image('OSU/GIMP/2000_ICE_OCEAN_MASK')
+//                         .select('ocean_mask').eq(1); // ocean mask
+// Map.addLayer(greenlandmask, {min: 0, max: 1}, 'greenland mask');
+// Map.addLayer(greenland_landmask, {min: 0, max: 1}, 'greenland land mask');
+// Map.addLayer(greenland_icemask, {min: 0, max: 1}, 'greenland ice mask');
+// Map.addLayer(greenland_oceanmask, {min: 0, max: 1}, 'greenland ocean mask');
 var arcticDEM = ee.Image('UMN/PGC/ArcticDEM/V3/2m_mosaic').updateMask(greenlandmask);
 var palettes = require('users/gena/packages:palettes');
 
@@ -75,11 +88,11 @@ function maskL8sr(image) {
 
   // Apply the scaling factors to the appropriate bands.
   var opticalBands = image.select('SR_B.').multiply(0.0000275).add(-0.2);
-  var thermalBands = image.select('ST_B.*').multiply(0.00341802).add(149.0).subtract(273.15);
+  // var thermalBands = image.select('ST_B.*').multiply(0.00341802).add(149.0).subtract(273.15);
 
   // Replace the original bands with the scaled ones and apply the masks.
   return image.addBands(opticalBands, null, true)
-      .addBands(thermalBands, null, true)
+      // .addBands(thermalBands, null, true)
       .updateMask(qaMask)
       .updateMask(saturationMask);
 }
@@ -98,21 +111,38 @@ function maskL457sr(image) {
 
   // Apply the scaling factors to the appropriate bands.
   var opticalBands = image.select('SR_B.').multiply(0.0000275).add(-0.2);
-  var thermalBands = image.select('ST_B10').multiply(0.00341802).add(149.0).subtract(273.15);
+  // var thermalBands = image.select('ST_B10').multiply(0.00341802).add(149.0).subtract(273.15);
 
   // Replace the original bands with the scaled ones and apply the masks.
   return image.addBands(opticalBands, null, true)
-      .addBands(thermalBands, null, true)
+      // .addBands(thermalBands, null, true)
       .updateMask(qaMask)
       .updateMask(saturationMask);
 }
 
-// calibration: Coefficients:  0.75508115, Intercept:  1.229782776404388
+// Function to calibrate LST using different coefficients for different land cover types
 function calibrateLST(image) {
-    var lst = image.select('ST_B10');
-    var lst_calibrated = lst.multiply(0.75508115).add(1.229782776404388);
-    return image.addBands(lst_calibrated.rename('GEMLST_Landsat'));
+  var lst = image.select('ST_B10').multiply(0.00341802).add(149.0).subtract(273.15);
+  
+  // Apply land calibration: y = 0.8382798596053026*x + 1.9527861913159263
+  var lst_land = lst.multiply(0.8382798596053026).add(1.9527861913159263)
+            .updateMask(greenland_landmask).rename('ST_B10_land');
+  
+  // Apply ocean calibration: y = 0.7212493050563921*x + 1.4461030886482544
+  var lst_ocean = lst.multiply(0.7212493050563921).add(1.4461030886482544);
+  
+  // For ice areas, keep the original values
+  var lst_ice = lst.updateMask(greenland_icemask).rename('ST_B10_ice');
+  
+  // Combine the calibrated images
+  var lst_calibrated = lst_ocean.where(greenland_landmask, lst_land)
+                              .where(greenland_icemask, lst_ice);
+
+  // Add the calibrated band to the image
+  return image.addBands(lst_calibrated.rename('GEMEST_Landsat'))
+              .addBands(lst.rename('LST_Original'));
 }
+
 
 
 
@@ -141,7 +171,7 @@ var inspectorPanel = ui.Panel({style: {width: '30%'}});
 // Create an intro panel with labels.
 var intro = ui.Panel([
   ui.Label({
-    value: 'GEMLST_Landsat - Time Series Inspector',
+    value: 'GEMEST_Landsat - Time Series Inspector',
     style: {fontSize: '20px', fontWeight: 'bold'}
   }),
   ui.Label('Click a location to see its time series of temperature. This app shows both the original and calibrated Landsat surface temperature. '),
@@ -212,7 +242,7 @@ var generateChart = function (coords) {
   var multiSat = oliCol.merge(etmCol).merge(tmCol).merge(tm4Col).merge(oli2Col);;
   
   // Make a chart from the time series.
-  var geeChart = ui.Chart.image.series(multiSat.select('ST_B10', 'GEMLST_Landsat'), point, ee.Reducer.mean(), 90);
+  var geeChart = ui.Chart.image.series(multiSat.select('LST_Original', 'GEMEST_Landsat'), point, ee.Reducer.mean(), 90);
   geeChart.setChartType('ScatterChart');
   // Customize the chart.
   geeChart.setOptions({
@@ -474,14 +504,14 @@ var loadComposite = function() {
     var rgbCompositeLayer = ui.Map.Layer(rgbComposite).setName(rgblayerName);
     mapPanel.layers().set(1, rgbCompositeLayer);
 
-    var originalLST = imMean.select('ST_B10');
+    var originalLST = imMean.select('LST_Original');
     var originalLSTLayerName = 'Original LST ' + year + '-' + month + '-' + day;
     var originalLSTComposite = originalLST.visualize(vis);
     var originalLSTCompositeLayer = ui.Map.Layer(originalLSTComposite).setName(originalLSTLayerName);
     mapPanel.layers().set(2, originalLSTCompositeLayer);
 
-    var imgDownload = imMean.select('GEMLST_Landsat');
-    var layerName = 'GEMLST_Landsat ' + year + '-' + month + '-' + day;
+    var imgDownload = imMean.select('GEMEST_Landsat');
+    var layerName = 'GEMEST_Landsat ' + year + '-' + month + '-' + day;
     var imgComposite = imgDownload.visualize(vis);//.updateMask(greenlandmask);
     var imgCompositeLayer = ui.Map.Layer(imgComposite).setName(layerName);
     // layers.add(imgCompositeLayer, layerName);

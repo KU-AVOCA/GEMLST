@@ -47,37 +47,45 @@ awslist = {
         'time_zone': 'UTC-3',
         'temp_var': 'SurfaceTemperature (°C)'
     },
-    'Disko_T1': {
-        'lat': 69.27300262451172,
-        'lon': -53.479400634765625,
-        'filepath': '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/AWS/3_Disko/1_ClimateData/T1-Temperature_125m_10.17897_ZHA1-YC59/T1-Temperature_125m_10.17897_ZHA1-YC59_data.txt',
+    # 'Disko_T1': {
+    #     'lat': 69.27300262451172,
+    #     'lon': -53.479400634765625,
+    #     'filepath': '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/AWS/3_Disko/1_ClimateData/T1-Temperature_125m_10.17897_ZHA1-YC59/T1-Temperature_125m_10.17897_ZHA1-YC59_data.txt',
+    #     'temp_unit': 'celcius',
+    #     'time_zone': 'UTC-3',
+    #     'temp_var': 'Ground surface temperature_°C'
+    # },
+    # 'Disko_T2': {
+    #     'lat': 69.28909301757812,
+    #     'lon': -53.43281936645508,
+    #     'filepath': '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/AWS/3_Disko/1_ClimateData/T2-Temperature_830m_10.17897_1QY7-Q102/T2-Temperature_830m_10.17897_1QY7-Q102_data.txt',
+    #     'temp_unit': 'celcius',
+    #     'time_zone': 'UTC-3',
+    #     'temp_var': 'Ground surface temperature_°C'
+    # },
+    # 'Disko_T3': {
+    #     'lat': 69.2767105102539,
+    #     'lon': -53.45709991455078,
+    #     'filepath': '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/AWS/3_Disko/1_ClimateData/T3-Temperature_400m_10.17897_CFES-BX22/T3-Temperature_400m_10.17897_CFES-BX22_data.txt',
+    #     'temp_unit': 'celcius',
+    #     'time_zone': 'UTC-3',
+    #     'temp_var': 'Ground surface temperature_°C'
+    # },
+    # 'Disko_T4': {
+    #     'lat': 69.25126647949219,
+    #     'lon': -53.49897003173828,
+    #     'filepath': '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/AWS/3_Disko/1_ClimateData/T4-Temperature_1m_10.17897_QDGE-TH28/T4-Temperature_1m_10.17897_QDGE-TH28_data.txt',
+    #     'temp_unit': 'celcius',
+    #     'time_zone': 'UTC-3',
+    #     'temp_var': 'Ground surface temperature_°C'
+    # },
+    'Disko_AWS2': {
+        'lat': 69.25348663330078,
+        'lon': -53.514129638671875, 
+        'filepath': '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/AWS/3_Disko/1_ClimateData/AWS2-Meteorology_10.17897_CSZT-F010/AWS2-Meteorology_10.17897_CSZT-F010_data.txt',
         'temp_unit': 'celcius',
         'time_zone': 'UTC-3',
-        'temp_var': 'Ground surface temperature_°C'
-    },
-    'Disko_T2': {
-        'lat': 69.28909301757812,
-        'lon': -53.43281936645508,
-        'filepath': '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/AWS/3_Disko/1_ClimateData/T2-Temperature_830m_10.17897_1QY7-Q102/T2-Temperature_830m_10.17897_1QY7-Q102_data.txt',
-        'temp_unit': 'celcius',
-        'time_zone': 'UTC-3',
-        'temp_var': 'Ground surface temperature_°C'
-    },
-    'Disko_T3': {
-        'lat': 69.2767105102539,
-        'lon': -53.45709991455078,
-        'filepath': '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/AWS/3_Disko/1_ClimateData/T3-Temperature_400m_10.17897_CFES-BX22/T3-Temperature_400m_10.17897_CFES-BX22_data.txt',
-        'temp_unit': 'celcius',
-        'time_zone': 'UTC-3',
-        'temp_var': 'Ground surface temperature_°C'
-    },
-    'Disko_T4': {
-        'lat': 69.25126647949219,
-        'lon': -53.49897003173828,
-        'filepath': '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/AWS/3_Disko/1_ClimateData/T4-Temperature_1m_10.17897_QDGE-TH28/T4-Temperature_1m_10.17897_QDGE-TH28_data.txt',
-        'temp_unit': 'celcius',
-        'time_zone': 'UTC-3',
-        'temp_var': 'Ground surface temperature_°C'
+        'temp_var': 'Ground temperature_°C'
     },
     'Zackenberg_M2': {
         'lat': 74.46549224853516,
@@ -109,7 +117,8 @@ awslist = pd.DataFrame.from_dict(awslist, orient='index')
 awslist = awslist.reset_index().rename(columns={'index': 'aws'})
 awslist['date_start'] = pd.to_datetime('')
 awslist['date_end'] = pd.to_datetime('')
-
+# Export the AWS list to a CSV file
+awslist.to_csv('/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/AWS/aws_stations.csv', index=False)
 # %% check the date range of each AWS station and save the
 #  temperature to a new CSV file.
 for i in range(awslist.shape[0]):
@@ -145,7 +154,7 @@ for i in range(awslist.shape[0]):
     df['aws'] = awslist.loc[i, 'aws']
     df = df[['Date', 'temperature', 'aws']]  # Select only needed columns
     # Resample to hourly averages
-    df = df.set_index('Date').resample('H').agg({
+    df = df.set_index('Date').resample('h').agg({
         'temperature': 'mean',
         'aws': 'first'
     }).reset_index()
