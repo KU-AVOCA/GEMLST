@@ -34,7 +34,7 @@ For detailed information, see the [GEMNDVI README](GEMNDVI.md).
 All products are available through interactive Google Earth Engine web applications:
 
 - [GEMLST-MODIS](https://ku-gem.projects.earthengine.app/view/gemlst-viewer) - Visualize daily land surface temperature
-- [GEMEST_Landsat](https://code.earthengine.google.com/#) - Explore high-resolution land surface temperature
+- [GEMEST_Landsat](https://ku-gem.projects.earthengine.app/view/gemestlandsat) - Explore high-resolution land surface temperature
 - [GEMNDVI-MODIS-Viewer](https://ku-gem.projects.earthengine.app/view/gemndvimodis) - Visualize daily vegetation index
 - [GEMNDVI-Sentinel2-Viewer](https://ku-gem.projects.earthengine.app/view/gemndvisentinel2) - Explore high-resolution vegetation index
 
