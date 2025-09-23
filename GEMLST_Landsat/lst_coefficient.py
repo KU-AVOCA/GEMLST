@@ -33,8 +33,8 @@ sns.set_theme(style="darkgrid", font_scale=1.5)
 
 #%%    
 # File paths
-aws_path = '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/aws_temperature.csv'
-landsat_path = '/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/Landsat_LST/data/GEM_AWS_LandsatLST.csv'
+aws_path = 'C:/Users/simon/OneDrive - University of Copenhagen/Documents/Arbeitsmappe/GEMLST/data4simon/aws_temperature.csv'
+landsat_path = 'C:/Users/simon/OneDrive - University of Copenhagen/Documents/Arbeitsmappe/GEMLST/data4simon/GEM_AWS_LandsatLST.csv'
 
 # Load data
 aws_data = pd.read_csv(aws_path)

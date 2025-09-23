@@ -3,69 +3,74 @@ This script extracts Landsat LST USGS products for GEM AWS stations.
 */
 
 // a list of points for GEM AWS stations with temperature data
-// var awsPoints = ee.FeatureCollection([
-//     // Kobbefjord
-//     ee.Feature(ee.Geometry.Point([-51.37199020385742, 64.12248229980469]), {
-//         id: 'Kobbefjord_M500'
-//     }),
-    
-//     // Disko
-//     ee.Feature(ee.Geometry.Point([-53.479400634765625, 69.27300262451172]), {
-//         id: 'Disko_T1'
-//     }),
-//     ee.Feature(ee.Geometry.Point([-53.43281936645508, 69.28909301757812]), {
-//         id: 'Disko_T2'
-//     }),
-//     ee.Feature(ee.Geometry.Point([-53.45709991455078, 69.2767105102539]), {
-//         id: 'Disko_T3'
-//     }),
-//     ee.Feature(ee.Geometry.Point([-53.49897003173828, 69.25126647949219]), {
-//         id: 'Disko_T4'
-//     }),
-    
-//     // Zackenberg
-//     ee.Feature(ee.Geometry.Point([-20.563194274902344, 74.46549224853516]), {
-//         id: 'Zackenberg_M2'
-//     }),
-//     ee.Feature(ee.Geometry.Point([-20.459354400634766, 74.50310516357422]), {
-//         id: 'Zackenberg_M3'
-//     }),
-//     ee.Feature(ee.Geometry.Point([-20.552143096923828, 74.47307586669922]), {
-//         id: 'Zackenberg_M4_30min'
-//     })
-// ]);
-// a list of points for TOMST sensor locations
 var awsPoints = ee.FeatureCollection([
-  // TOMST2
-  ee.Feature(ee.Geometry.Point([-53.51418, 69.25349]), {
-      id: 'TOMST2',
-      raw_identifier: 94204541
-  }),
-  // TOMST3
-  ee.Feature(ee.Geometry.Point([-53.467324, 69.265525]), {
-      id: 'TOMST3',
-      raw_identifier: 94204542
-  }),
-  // TOMST-T2-15
-  ee.Feature(ee.Geometry.Point([-53.4328202, 69.289089]), {
-      id: 'TOMST-T2-15',
-      raw_identifier: 94232447
-  }),
-  // TOMST4-15
-  ee.Feature(ee.Geometry.Point([-53.45363, 69.27282]), {
-      id: 'TOMST4-15',
-      raw_identifier: 94232448
-  }),
-  // TOMST4-30
-  ee.Feature(ee.Geometry.Point([-53.45363, 69.27282]), {
-      id: 'TOMST4-30',
-      raw_identifier: 94229981
-  })
+    // Kobbefjord
+    ee.Feature(ee.Geometry.Point([-51.37199020385742, 64.12248229980469]), {
+        id: 'Kobbefjord_M500'
+    }),
+
+    // add evt more stations (Heath, Fen, ClimateBase) if surface temp available. 
+    
+    // Disko
+    ee.Feature(ee.Geometry.Point([-53.479400634765625, 69.27300262451172]), {
+        id: 'Disko_T1'
+    }),
+    ee.Feature(ee.Geometry.Point([-53.43281936645508, 69.28909301757812]), {
+        id: 'Disko_T2'
+    }),
+    ee.Feature(ee.Geometry.Point([-53.45709991455078, 69.2767105102539]), {
+        id: 'Disko_T3'
+    }),
+    ee.Feature(ee.Geometry.Point([-53.49897003173828, 69.25126647949219]), {
+        id: 'Disko_T4'
+    }),
+    
+    // Zackenberg
+    ee.Feature(ee.Geometry.Point([-20.563194274902344, 74.46549224853516]), {
+        id: 'Zackenberg_M2'
+    }),
+    ee.Feature(ee.Geometry.Point([-20.459354400634766, 74.50310516357422]), {
+        id: 'Zackenberg_M3'
+    }),
+    ee.Feature(ee.Geometry.Point([-20.552143096923828, 74.47307586669922]), {
+        id: 'Zackenberg_M4_30min'
+    })
 ]);
+// a list of points for TOMST sensor locations
+
+// var awsPoints = ee.FeatureCollection([
+//   // TOMST2
+//   ee.Feature(ee.Geometry.Point([-53.51418, 69.25349]), {
+//       id: 'TOMST2',
+//       raw_identifier: 94204541
+//   }),
+//   // TOMST3
+//   ee.Feature(ee.Geometry.Point([-53.467324, 69.265525]), {
+//       id: 'TOMST3',
+//       raw_identifier: 94204542
+//   }),
+//   // TOMST-T2-15
+//   ee.Feature(ee.Geometry.Point([-53.4328202, 69.289089]), {
+//       id: 'TOMST-T2-15',
+//       raw_identifier: 94232447
+//   }),
+//   // TOMST4-15
+//   ee.Feature(ee.Geometry.Point([-53.45363, 69.27282]), {
+//       id: 'TOMST4-15',
+//       raw_identifier: 94232448
+//   }),
+//   // TOMST4-30
+//   ee.Feature(ee.Geometry.Point([-53.45363, 69.27282]), {
+//       id: 'TOMST4-30',
+//       raw_identifier: 94229981
+//   })
+// ]);
 Map.addLayer(awsPoints, {color: 'red'}, 'AWS Points');
 
 var date_start = ee.Date.fromYMD(2020, 1, 1),
     date_end = ee.Date.fromYMD(2024, 12, 31);
+
+// Check AWS starting and end date. GEM is missing only 2024, but gather as much as possible. 
 
 /*
 prepare landsat image collection
@@ -174,12 +179,36 @@ var multiSat = oliCol.merge(etmCol).merge(tmCol).merge(tm4Col).merge(oli2Col);
 /* extract LST data for each AWS station  
 Reference: https://developers.google.com/earth-engine/tutorials/community/extract-raster-values-for-points
 */
+
+// The function bufferPoints seems not to be used. Why?
+// It creates a buffer around each point, which can be useful if you want to average the LST over an area around the point.
+// If you want to extract the LST at the exact point location, you don't need it.
+// Doesn't line 276 already create a buffer around the points?
+// If you want to use it, you can uncomment the following line and set the desired radius (in meters).
+// var bufferedPoints = awsPoints.map(bufferPoints(30, true)); // 30m buffer, bounds
+
 function bufferPoints(radius, bounds) {
   return function(pt) {
     pt = ee.Feature(pt);
     return bounds ? pt.buffer(radius).bounds() : pt.buffer(radius);
   };
 }
+// SIK: We might want to drop this for MODIS, as the cells are already 1km wide? Keep. Buffer includes surrounding cells that might be just as close. Takes avg. afterwards. 
+
+// The following part seems complicated. Can't we just use a Reducer on the points?
+// E.g. something like this:
+// var lstData = multiSat.select('ST_B10').map(function(img) {
+//   return img.reduceRegions({
+//     collection: awsPoints,
+//     reducer: ee.Reducer.mean(),
+//     scale: 30,
+//     crs: 'EPSG:3413'
+//   }).map(function(f) {
+//     return f.set('date', img.date().format('YYYY-MM-dd')).set('timestamp', img.get('system:time_start')).set('sampleID', f.get('name'));
+//   });
+// }).flatten();
+// The problem with the above is that it will also return points with null values, which we do not want.
+// The function below does the same, but filters out null values.
 
 function zonalStats(ic, fc, params) {
   // Initialize internal params dictionary.

@@ -15,6 +15,14 @@ Steps:
 Shunan Feng (shf@ign.ku.dk)
 */
 
+// SKL GEMLST_MODIS\GEMLST_MODIS.js works but creates daily mosaic where ERA5 is used for gap filling on all pixel without any MODIS data. 
+// Aim: Adjust the work flow so gap filling is conducted using: 
+	//1. JAXA GCOM LST V3 
+	//2. NASA VIIRS Day LST
+	//3. NASA VIIRS Night LST
+//If nothing else: ERA5 AIR temperature (instead of skin temperature). 
+
+
 // 1. Define the region of interest, mask, and time period
 var greenlandmask = ee.Image('OSU/GIMP/2000_ICE_OCEAN_MASK').select('ocean_mask').eq(0);
 var greenland = /* color: #ffc82d */ee.Geometry.Polygon(
