@@ -5,7 +5,7 @@ import numpy as np
 from pathlib import Path
 
 #%%
-imfolder = "/mnt/i/SCIENCE-IGN-ALL/AVOCA_Group/1_Personal_folders/3_Shunan/data/GEMLST_MODIS/ERA5/GL500m/t2m"
+imfolder = "D:\Test_ERA5Land500m"
 imfiles = sorted(Path(imfolder).rglob("*.nc"))
 sites = [
     {"id": "Kobbefjord_M500", "longitude": -51.37199020385742, "latitude": 64.12248229980469},
@@ -70,3 +70,5 @@ print(temps_df.head())
 print("\nDataFrame shape:", temps_df.shape)
 print("\nDataFrame info:")
 print(temps_df.info())
+
+# %%

@@ -227,9 +227,8 @@ var MODLST = daily_ERA5Land.select(['surface_net_solar_radiation', 'skin_tempera
     ['MYDLST_Night', 'MYDQA_Night']
 );
 // 3. Calculate Availability Pattern and Match Coefficients
-
 // 3.1 coefficients for calbrating and calculating the final LST
-// Each obs_avail_flag is a unique combination of MODIS Terra and Aqua LST availability
+// Bitmask-based ID system, where each obs_avail_flag is a unique combination of MODIS Terra and Aqua LST availability
 // The availablity is noted in the comments of the coefficients, where 0 is not available and 1 is available
 var coefficients = {
     // MODLST_Day: 1, MODLST_Night: 0, MYDLST_Day: 0, MYDLST_Night: 0
