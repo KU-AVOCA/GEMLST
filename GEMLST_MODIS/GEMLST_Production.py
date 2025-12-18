@@ -36,8 +36,8 @@ greenland = ee.Geometry.Polygon(
     [-31.636966121354217, 83.7553561747887]]])
 
 # create a vector of month time steps
-months = np.arange(1, 12, 1)
-date_start_initial = ee.Date('2000-02-01')
+months = np.arange(1, 13, 1)
+date_start_initial = ee.Date('2001-01-01')
 
 date_end_mod = ee.Date('2020-02-27') # Before orbital drift TERRA
 date_end_myd = ee.Date('2021-03-18') # Before orbital drift AQUA
@@ -444,9 +444,9 @@ for s in months:
         ['MOD_LST_Day', 'MOD_LST_Night', 'MYD_LST_Day', 'MYD_LST_Night', 'VIIRS_LST_D', 'VIIRS_LST_N', 'JAXA_LST_A', 'JAXA_LST_D',]
         ).reduce(ee.Reducer.mean())
 
-        # Create a function to process each coefficient pattern
-
+        # Create a function to process each coefficient pattern on land and ice
         def applyLandCoefficient(key, correctedLST):
+            '''Land coefficient application function'''
             numericKey = ee.Number(key).toInt()
             # 'coeff = ee.Dictionary(lookup_land.get(numericKey.format()))
             # coeffDict = ee.Dictionary(coeff)'
@@ -462,6 +462,7 @@ for s in months:
             return ee.Image(correctedLST).add(calibratedLST_land)
         
         def applyIceCoefficient(key, correctedLST):
+            '''Ice coefficient application function'''
             numericKey = ee.Number(key).toInt()
             # coeff = ee.Dictionary(lookup_ice.get(numericKey.format()))
             # coeffDict = ee.Dictionary(coeff)
@@ -476,10 +477,11 @@ for s in months:
 
             return ee.Image(correctedLST).add(calibratedLST_ice)
         
-
+        # Itarate through all available unique patterns. Input: Coefficient application function and an empty image.
         correctedLST_land = availPatternUniqueKeys.iterate(applyLandCoefficient, ee.Image(0))
         correctedLST_ice = availPatternUniqueKeys.iterate(applyIceCoefficient, ee.Image(0))
 
+        # Mask out any observations where temp is above 0C on the ice sheet 
         below0 = ee.Image(correctedLST_ice).lte(0)
         correctedLST_ice = ee.Image(correctedLST_ice).updateMask(below0)
 
@@ -487,12 +489,10 @@ for s in months:
             correctedLST_ice.updateMask(icemask).unmask(0)
         )
 
-        # correctedLST = correctedLST_land.where(icemask, correctedLST_ice).where(landmask, correctedLST_land) # if this works and it's faster, no need to unmask images above too. 
-
         return image.addBands([
-            ee.Image(correctedLST).rename('Corrected_LST').updateMask(greenlandmask).toDouble(), # double check if it is necessary to updatemask
+            ee.Image(correctedLST).rename('Corrected_LST').updateMask(greenlandmask).toDouble(),
             availPattern.rename('Available_Pattern').updateMask(greenlandmask).toDouble()
-        ])#.select(['Corrected_LST', 'Available_Pattern'])
+        ])
 
 
     # %%
@@ -522,6 +522,8 @@ for s in months:
         )
         task.start()
         print(f'Started task: {desc}')
+
+    print(f'Finished month {s}\n')
 
     # %%
 
