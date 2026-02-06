@@ -40,7 +40,7 @@ reproject(
     src_crs=crs_3413,
     dst_transform=lst_transform,
     dst_crs=lst_crs,
-    resampling=Resampling.bilinear
+    resampling=Resampling.bilinear,
     src_nodata=np.nan,
     dst_nodata=np.nan
 )
