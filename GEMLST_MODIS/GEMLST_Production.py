@@ -36,8 +36,8 @@ greenland = ee.Geometry.Polygon(
     [-31.636966121354217, 83.7553561747887]]])
 
 # create a vector of month time steps
-# months = np.arange(1, 13, 1) # last month not inclusive!
-date_start_initial = ee.Date('2003-01-01')
+months = np.arange(1, 6, 1) # last month not inclusive!
+date_start_initial = ee.Date('2017-08-01') #started 05.02., 22:00
 
 date_end_mod = ee.Date('2020-02-27') # Before orbital drift TERRA
 date_end_myd = ee.Date('2021-03-18') # Before orbital drift AQUA
