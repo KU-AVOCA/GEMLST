@@ -25,8 +25,8 @@ from pathlib import Path
 imfiles = sorted(Path(imfolder).rglob("*.nc"))
 
 # markers (adjust if you need case-insensitive match or different substrings)
-start_marker = "t2m_elvcorr_2003_d217.nc"
-end_marker = "t2m_elvcorr_2011_d365.nc"
+start_marker = "t2m_elvcorr_2003_d217.nc" # Date of first GEM observation
+end_marker = "t2m_elvcorr_2011_d365.nc" # To split the data into two parts for easier handling
 
 # find first index containing the start marker and last index containing the end marker
 start_idx = next((i for i, p in enumerate(imfiles) if start_marker in p.name), None)
