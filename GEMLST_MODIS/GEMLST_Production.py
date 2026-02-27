@@ -1,7 +1,7 @@
 # %%
 # Import packages and initialize Earth Engine
 
-import ee, geetools
+import ee
 import geemap
 import pandas as pd
 import numpy as np
@@ -36,8 +36,8 @@ greenland = ee.Geometry.Polygon(
     [-31.636966121354217, 83.7553561747887]]])
 
 # create a vector of month time steps
-months = np.arange(1, 6, 1) # last month not inclusive!
-date_start_initial = ee.Date('2017-08-01') #started 05.02., 22:00
+months = np.arange(1, 11, 1) # last month not inclusive!
+date_start_initial = ee.Date('2018-01-01') # 1041
 
 date_end_mod = ee.Date('2020-02-27') # Before orbital drift TERRA
 date_end_myd = ee.Date('2021-03-18') # Before orbital drift AQUA
@@ -54,7 +54,7 @@ for s in months:
     # %%
 
     lookup_ice = ee.FeatureCollection('projects/ee-ivanburgov666/assets/coefficients_ice')
-    lookup_land = ee.FeatureCollection('projects/ee-ivanburgov666/assets/coefficients_land')
+    lookup_land = ee.FeatureCollection('projects/ee-ivanburgov666/assets/coefficients_land_doublettes')
 
 
     # %%
@@ -130,7 +130,7 @@ for s in months:
         return image.updateMask(mask)
 
 
-    # def maskJaxa(image):
+    def maskJaxa(image):
         # '''Function to filter JAXA GCOM-C LST data based on quality flag.'''
         # qa = image.select('LST_QA_flag')
         # #0: water (land fraction = 0%)
@@ -138,7 +138,7 @@ for s in months:
         # #2: mostly coastal (50% < land fraction < 100%) - included
         # #3: land (land fraction = 100%) - included
         # mask = qa.gt(1)
-        # return image.updateMask(greenlandmask)
+        return image.updateMask(icemask) 
 
     def maskViirs(image):
         '''Function to filter VIIRS LST data based on quality flag.'''
@@ -320,7 +320,7 @@ for s in months:
         .filter(ee.Filter.eq('PROCESSING_RESULT', 'Good')) # *************** NEW OBS! CHECK IF CORRECT
         .filterDate(date_start, date_end)
         .filterBounds(greenland)
-        # .map(maskJaxa)
+        .map(maskJaxa)
         .map(lst_jaxa_a)
     )
 
@@ -331,7 +331,7 @@ for s in months:
         .filter(ee.Filter.eq('PROCESSING_RESULT', 'Good')) # *************** NEW OBS! CHECK IF CORRECT
         .filterDate(date_start, date_end)
         .filterBounds(greenland)
-        # .map(maskJaxa)
+        .map(maskJaxa)
         .map(lst_jaxa_d)
     )
 
@@ -420,68 +420,55 @@ for s in months:
             VIIRS_NIGHT_avail,
             JAXA_A_avail,
             JAXA_D_avail
-        ) # returns image
-
-        availPatternUnique = availPattern.reduceRegion(
-            reducer = ee.Reducer.frequencyHistogram(),
-            geometry = greenland,
-            scale = 1000,
-            maxPixels = 1e13,
-            crs = 'EPSG:3413'
         )
 
-        # Extract histogram dictionary for the availability band,
-        # convert the string keys to numbers and filter out the "0" pattern
+        availPatternUnique = availPattern.reduceRegion(
+            reducer=ee.Reducer.frequencyHistogram(),
+            geometry=greenland,
+            scale=1000,
+            maxPixels=1e13,
+            crs='EPSG:3413'
+        )
+
         band_name = ee.String(availPattern.bandNames().get(0))
         hist_dict = ee.Dictionary(availPatternUnique.get(band_name))
         availPatternUniqueKeys = ee.List(hist_dict.keys()) \
             .map(lambda k: ee.Number.parse(k)) \
             .filter(ee.Filter.neq('item', 0))
 
-
-        # calculate the average LST
         LSTimage = image.select(
-        ['MOD_LST_Day', 'MOD_LST_Night', 'MYD_LST_Day', 'MYD_LST_Night', 'VIIRS_LST_D', 'VIIRS_LST_N', 'JAXA_LST_A', 'JAXA_LST_D',]
+            ['MOD_LST_Day', 'MOD_LST_Night', 'MYD_LST_Day', 'MYD_LST_Night', 'VIIRS_LST_D', 'VIIRS_LST_N', 'JAXA_LST_A', 'JAXA_LST_D']
         ).reduce(ee.Reducer.mean())
 
-        # Create a function to process each coefficient pattern on land and ice
         def applyLandCoefficient(key, correctedLST):
-            '''Land coefficient application function'''
             numericKey = ee.Number(key).toInt()
-            # 'coeff = ee.Dictionary(lookup_land.get(numericKey.format()))
-            # coeffDict = ee.Dictionary(coeff)'
             coeff = lookup_land.filter(ee.Filter.eq('ID', numericKey)).first()
             intercept = ee.Number(coeff.get('intercept_before'))
             slope = ee.Number(coeff.get('coef_before'))
 
             patternMask = availPattern.eq(numericKey)
             calibratedLST_land = LSTimage.multiply(slope).add(intercept) \
-            .updateMask(patternMask) \
-            .unmask(0)
+                .updateMask(patternMask) \
+                .unmask(0)
 
             return ee.Image(correctedLST).add(calibratedLST_land)
-        
+
         def applyIceCoefficient(key, correctedLST):
-            '''Ice coefficient application function'''
             numericKey = ee.Number(key).toInt()
-            # coeff = ee.Dictionary(lookup_ice.get(numericKey.format()))
-            # coeffDict = ee.Dictionary(coeff)
             coeff = lookup_ice.filter(ee.Filter.eq('ID', numericKey)).first()
             intercept = ee.Number(coeff.get('intercept_before'))
             slope = ee.Number(coeff.get('coef_before'))
 
             patternMask = availPattern.eq(numericKey)
             calibratedLST_ice = LSTimage.multiply(slope).add(intercept) \
-            .updateMask(patternMask) \
-            .unmask(0)
+                .updateMask(patternMask) \
+                .unmask(0)
 
             return ee.Image(correctedLST).add(calibratedLST_ice)
-        
-        # Itarate through all available unique patterns. Input: Coefficient application function and an empty image.
+
         correctedLST_land = availPatternUniqueKeys.iterate(applyLandCoefficient, ee.Image(0))
         correctedLST_ice = availPatternUniqueKeys.iterate(applyIceCoefficient, ee.Image(0))
 
-        # Mask out any observations where temp is above 0C on the ice sheet 
         below0 = ee.Image(correctedLST_ice).lte(0)
         correctedLST_ice = ee.Image(correctedLST_ice).updateMask(below0)
 
@@ -493,6 +480,7 @@ for s in months:
             ee.Image(correctedLST).rename('Corrected_LST').updateMask(greenlandmask).toDouble(),
             availPattern.rename('Available_Pattern').updateMask(greenlandmask).toDouble()
         ])
+
 
 
     # %%
@@ -529,3 +517,5 @@ for s in months:
 
 
 
+
+# %%
