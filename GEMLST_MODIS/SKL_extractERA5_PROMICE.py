@@ -14,7 +14,7 @@ from pathlib import Path
 #%% IMPORT DATA
 
 # ERA5 Data: 
-imfolder = "/media/sirsimsius/WD3TB/ERA5Land500m/t2m/"
+imfolder = "/media/sirsimsius/NTFS2TB/ERA5Land500m"
 imfiles = sorted(Path(imfolder).glob("*.nc"))
 
 # PROMICE DATA (dataset of each PROMICE aws' yearly averaged position, cols: aws, year, lat, lon)
@@ -32,8 +32,8 @@ station_list = promice_df['aws'].unique()
 imfiles = sorted(Path(imfolder).rglob("*.nc"))
 
 # markers (adjust if you need case-insensitive match or different substrings)
-start_marker = "t2m_elvcorr_2007_d232.nc" # 20.08.2007 (= first PROMICE OBS)
-end_marker = "t2m_elvcorr_2011_d365.nc" # 31.12.2024
+start_marker = "t2m_elvcorr_2012_d001.nc" # 01.01.2012 (= first img part 2)
+end_marker = "t2m_elvcorr_2024_d366.nc" # 31.12.2024
 
 # find first index containing the start marker and last index containing the end marker
 start_idx = next((i for i, p in enumerate(imfiles) if start_marker in p.name), None)
@@ -52,7 +52,7 @@ imfiles = imfiles[start_idx:end_idx + 1]
 #%% EXTRACT AND CREATE CSV
 
 ### Initialize an empty csv file to store results
-csv_path = "/home/sirsimsius/Dokumente/Arbeit/KU/GEMLST/GEMLST_MODIS/Data/ERA5/t2m_at_PROMICE_test2007.csv"
+csv_path = "/home/sirsimsius/Dokumente/Arbeit/KU/GEMLST/GEMLST_MODIS/Data/ERA5/t2m_at_PROMICE_part2.csv"
 final_df = pd.DataFrame(columns=station_list)
 
 
@@ -61,8 +61,12 @@ for imfile in imfiles:
 
     print(imfile.name)
 
-    # Open the dataset
-    ds = xr.open_dataset(imfile)
+    # If imfile is not readable, skip to the next file
+    try:
+        ds = xr.open_dataset(imfile)
+    except Exception as e:
+        print(f"Error opening {imfile.name}: {e}")
+        continue
 
     # Extract the temperature data
     t2m = ds['t2m']  # dims (time, zlev, Y, X)
