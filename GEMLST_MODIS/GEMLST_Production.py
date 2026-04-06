@@ -36,8 +36,8 @@ greenland = ee.Geometry.Polygon(
     [-31.636966121354217, 83.7553561747887]]])
 
 # create a vector of month time steps
-months = np.arange(1, 7, 1) # last month not inclusive!
-date_start_initial = ee.Date('2005-07-01') # 1041
+months = np.arange(1, 2, 1) # last month not inclusive! # 1,13,1
+date_start_initial = ee.Date('2019-04-16') # 1041
 
 date_end_mod = ee.Date('2020-02-27') # Before orbital drift TERRA
 date_end_myd = ee.Date('2021-03-18') # Before orbital drift AQUA
@@ -46,9 +46,14 @@ for s in months:
 
     adv=int(s-1)
     date_start = ee.Date(date_start_initial.advance(adv, 'month'))
-    date_end = ee.Date(date_start.advance(1, 'month'))
+    date_end = ee.Date(date_start.advance(1, 'month')) # month
     print(f'Processing month {s}: from {date_start.format("YYYY-MM-dd").getInfo()} to {date_end.format("YYYY-MM-dd").getInfo()}')
 
+    # Use this for single days
+    # adv=int(s-1)
+    # date_start = ee.Date(date_start_initial.advance(adv, 'month'))
+    # date_end = ee.Date(date_start.advance(1, 'day')) # month
+    # print(f'Processing month {s}: from {date_start.format("YYYY-MM-dd").getInfo()} to {date_end.format("YYYY-MM-dd").getInfo()}')
 
 
     # %%
@@ -388,12 +393,12 @@ for s in months:
 
     # %%
     # Calculate Availability Pattern
-    def calculateAvailability(aqua_day, aqua_night, terra_day, terra_night, viirs_day, viirs_night, jaxa_a, jaxa_b):
+    def calculateAvailability(terra_day, terra_night, aqua_day, aqua_night, viirs_day, viirs_night, jaxa_a, jaxa_b):
         '''Calculates a unique pattern ID in bit format based on the availability of the sensors'''
-        return (aqua_day.mask().multiply(1)
-            .add(aqua_night.mask().multiply(2))
-            .add(terra_day.mask().multiply(4))
-            .add(terra_night.mask().multiply(8))
+        return (terra_day.mask().multiply(1)
+            .add(terra_night.mask().multiply(2))
+            .add(aqua_day.mask().multiply(4))
+            .add(aqua_night.mask().multiply(8))
             .add(viirs_day.mask().multiply(16))
             .add(viirs_night.mask().multiply(32))
             .add(jaxa_a.mask().multiply(64))
