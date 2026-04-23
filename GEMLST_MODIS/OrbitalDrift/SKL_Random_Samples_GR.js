@@ -98,7 +98,14 @@ print(pointsWithBuffer(grid, region, seed, true).size(), " strict points, spaced
 Export.table.toAsset({
     collection: pointsWithBuffer(grid, region, seed, true),
     description:'randomGR5km',
-    assetId: 'projects/ee-ivanburgov666/assets/orbitdrift/randomGrIS5km',
+    assetId: 'projects/ee-ivanburgov666/assets/orbitdrift/randomGrIS5km_260423',
+  });
+
+// Export the feature collection as a shapefile to Google Drive.
+Export.table.toDrive({
+    collection: pointsWithBuffer(grid, region, seed, true),
+    description:'randomGR5km_260423',
+    fileFormat: 'SHP'
   });
 
 
