@@ -7,8 +7,8 @@ import geemap
 geemap.ee_initialize()
 
 # %%
-START_YEAR = 2000
-END_YEAR = 2024
+START_YEAR = 2003
+END_YEAR = 2024 # 2002 already downloaded
 EXPORT_FOLDER = 'GEMLST_MODIS'
 TILE_SCALE = 8
 SCALE_M = 1000
@@ -71,6 +71,7 @@ def prepare_collection_for_join(collection, prefix):
     return collection.map(rename_and_tag)
 
 def merge_joined_pair(joined_feature):
+    '''Merge the primary and secondary images from the joined feature into a single image with all bands.'''
     primary = ee.Image(joined_feature.get('primary'))
     secondary = ee.Image(joined_feature.get('secondary'))
     return ee.Image.cat(primary, secondary).set('date', primary.get('date')).set('system:time_start', primary.get('system:time_start'))
