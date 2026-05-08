@@ -4,11 +4,12 @@
 import ee
 import geemap
 
-geemap.ee_initialize()
+ee.Authenticate()
+ee.Initialize(project='ee-ivanburgov666')
 
 # %%
-START_YEAR = 2003
-END_YEAR = 2024 # 2002 already downloaded
+START_YEAR = 2004
+END_YEAR = 2025 # 2002 already downloaded
 EXPORT_FOLDER = 'GEMLST_MODIS'
 TILE_SCALE = 8
 SCALE_M = 1000
@@ -31,7 +32,7 @@ greenland = ee.Geometry.Polygon(
 [-26.627200496354217, 83.43179828852398],
 [-31.636966121354217, 83.7553561747887]]])
 
-poi = ee.FeatureCollection("projects/ee-ivanburgov666/assets/randomGR5km_masked_260423")
+poi = ee.FeatureCollection("projects/ee-ivanburgov666/assets/randomGR5km_masked_260508")
 
 
 # %%
@@ -53,8 +54,9 @@ def get_collection(dataset_id, date_start, date_end):
     )
 
 def add_poi_id(feature):
-    poi_id = feature.get('system:index')
-    return ee.Feature(feature).set({'poi_id': poi_id, 'system:index': poi_id})
+    poi_id = feature.get('object_id')
+    cls = feature.get('class')
+    return ee.Feature(feature).set({'object_id': poi_id, 'class': cls})
 
 
 poi_with_id = poi.map(add_poi_id)
@@ -82,7 +84,7 @@ def extract_collection_at_poi(collection):
         date = ee.String(img.get('date'))
         sampled = img.sampleRegions(
             collection=poi_with_id,
-            properties=['system:index', 'poi_id'],
+            properties=['object_id', 'class'],
             scale=SCALE_M,
             tileScale=TILE_SCALE,
             geometries=False,
@@ -90,7 +92,8 @@ def extract_collection_at_poi(collection):
         return sampled.map(
             lambda f: ee.Feature(f).set(
                 {
-                    'poi_id': f.get('poi_id'),
+                    'object_id': f.get('object_id'),
+                    'class': f.get('class'),
                     'date': date,
                 }
             )
@@ -119,9 +122,10 @@ def export_year(year):
     paired_collection = build_paired_collection_for_year(year)
     all_samples = extract_collection_at_poi(paired_collection)
 
-    description = f'GEMLST_MODIS_LST_POI_{year}'
+    description = f'GEMLST_MODIS_LST_POI_{year}_new'
     selectors = [
-        'poi_id',
+        'object_id',
+        'class',
         'date',
         'Terra_LST_Day_C',
         'Terra_LST_Night_C',
