@@ -18,8 +18,8 @@ df = pd.read_csv(file_path)
 ### Import dataframes and calc cross sensor differences
 df_path = ('C:/Users/simon/OneDrive - University of Copenhagen/Documents/Arbeitsmappe/GEMLST/GEMLST/GEMLST_MODIS/Data/MODMYD_POI/')
 
-start_year = 2003
-end_year = 2024
+start_year = 2000
+end_year = 2019
 
 yr_range = np.arange(start_year, end_year + 1)
 
@@ -135,10 +135,10 @@ print(summary_land_night)
 print(summary_ice_night)
 
 # Export summary tables to CSV
-summary_land_day.to_csv(os.path.join(df_path, 'summary_land_day.csv'), index=False)
-summary_ice_day.to_csv(os.path.join(df_path, 'summary_ice_day.csv'), index=False)
-summary_land_night.to_csv(os.path.join(df_path, 'summary_land_night.csv'), index=False)
-summary_ice_night.to_csv(os.path.join(df_path, 'summary_ice_night.csv'), index=False)
+# summary_land_day.to_csv(os.path.join(df_path, 'summary_land_day.csv'), index=False)
+# summary_ice_day.to_csv(os.path.join(df_path, 'summary_ice_day.csv'), index=False)
+# summary_land_night.to_csv(os.path.join(df_path, 'summary_land_night.csv'), index=False)
+# summary_ice_night.to_csv(os.path.join(df_path, 'summary_ice_night.csv'), index=False)
 
 
 #%%
@@ -235,6 +235,38 @@ ax2.set_ylabel('LST Difference on GrIS (°C)')
 plt.show()
 # %%
 
+
+for yr in yr_range:
+
+    baseline = lst_land_day[lst_land_day['year'] != yr]['diff_day']
+    focus = lst_land_day[lst_land_day['year'] == yr]['diff_day']
+    t_test = stats.ttest_ind(baseline, focus, equal_var=False)
+    print(f'Significance test {yr}')
+    if t_test.pvalue < 0.05:
+        print(f'\tLST_Land_Day: t-statistic = {t_test.statistic:.2f}, p-value = {t_test.pvalue:.4f}')
+
+    baseline = lst_land_night[lst_land_night['year'] != yr]['diff_night']
+    focus = lst_land_night[lst_land_night['year'] == yr]['diff_night']
+    t_test = stats.ttest_ind(baseline, focus, equal_var=False)
+    if t_test.pvalue < 0.05:
+        print(f'\tLST_Land_Night: t-statistic = {t_test.statistic:.2f}, p-value = {t_test.pvalue:.4f}')
+
+    baseline = lst_ice_day[lst_ice_day['year'] != yr]['diff_day']
+    focus = lst_ice_day[lst_ice_day['year'] == yr]['diff_day']
+    t_test = stats.ttest_ind(baseline, focus, equal_var=False)
+    if t_test.pvalue < 0.05:
+        print(f'\tLST_Ice_Day: t-statistic = {t_test.statistic:.2f}, p-value = {t_test.pvalue:.4f}')
+
+    baseline = lst_ice_night[lst_ice_night['year'] != yr]['diff_night']
+    focus = lst_ice_night[lst_ice_night['year'] == yr]['diff_night']
+    t_test = stats.ttest_ind(baseline, focus, equal_var=False)
+    if t_test.pvalue < 0.05:
+        print(f'\tLST_Ice_Night: t-statistic = {t_test.statistic:.2f}, p-value = {t_test.pvalue:.4f}')
+
+
+#%%
+
 # Suggested changes: 
-# Split analysis for ice / land 
+# Split analysis for ice / land - still significant
 # Compare data to other reference data (VIIRS) 
+
