@@ -1,3 +1,6 @@
+# Add VIIRS and cloud filters, then download again, also for MODIS
+
+
 # %%
 # Import packages and initialize Earth Engine
 
@@ -37,20 +40,107 @@ poi = ee.FeatureCollection("projects/ee-ivanburgov666/assets/randomGR5km_masked_
 
 # %%
 # Load MODIS Terra and Aqua data and convert LST from Kelvin scale to Celsius.
-def lst_conversion(image):
-    lst_night = image.select('LST_Night_1km').multiply(0.02).subtract(273.15).rename('LST_Night_C')
+def lst_conversion_day(image):
     lst_day = image.select('LST_Day_1km').multiply(0.02).subtract(273.15).rename('LST_Day_C')
-    return image.addBands(lst_night).addBands(lst_day)
+    return image.addBands(lst_day)
 
 
-def get_collection(dataset_id, date_start, date_end):
+def lst_conversion_night(image):
+    lst_night = image.select('LST_Night_1km').multiply(0.02).subtract(273.15).rename('LST_Night_C')
+    return image.addBands(lst_night)
+
+# Bitwise QA filter
+def bitwiseExtract(input, fromBit, toBit):
+    maskSize = ee.Number(1).add(toBit).subtract(fromBit)
+    mask = ee.Number(1).leftShift(maskSize).subtract(1)
+    return input.rightShift(fromBit).bitwiseAnd(mask)
+
+def maskQualityDaytime(image):
+    qa = image.select('QC_Day')
+
+    # Bits 0-"1": Mandatory QA flags
+    # "0": LST produced, good quality, not necessary to examine more detailed QA
+    # "1": LST produced, other quality, recommend examination of more detailed QA
+    # "2": LST not produced due to cloud effects
+    # "3": LST not produced primarily due to reasons other than cloud
+    bits01Mask = bitwiseExtract(qa, 0, 1).lte(1); 
+    # Bits 2-"3": Data quality flag
+    # "0": Good data quality
+    # "1": Other quality data
+    # "2": TBD
+    # "3": TBD
+    bits23Mask = bitwiseExtract(qa, 2, 3).eq(0)
+    # Bits 4-"5": Emissivity error flag
+    # "0": Average emissivity error <= 0.01
+    # "1": 0.01 < Average emissivity error <= 0.02
+    # "2": 0.02 < Average emissivity error <= 0.04
+    # "3": Average emissivity error > 0.04
+    bits45Mask = bitwiseExtract(qa, 4, 5).eq(0)
+    # Bit 6-"7": LST error flag
+    # "0": Average LST error <= 1K
+    # "1": Average LST error <= 2K
+    # "2": Average LST error <= 3K
+    # "3": Average LST error > 3K
+    bit6Mask = bitwiseExtract(qa, 6, 7).lte(1)
+
+    mask = bits01Mask.And(bits23Mask).And(bits45Mask).And(bit6Mask)
+
+    return image.updateMask(mask)
+
+def maskQualityNighttime(image):
+    qa = image.select('QC_Night')
+
+    # Bits 0-"1": Mandatory QA flags
+    # "0": LST produced, good quality, not necessary to examine more detailed QA
+    # "1": LST produced, other quality, recommend examination of more detailed QA
+    # "2": LST not produced due to cloud effects
+    # "3": LST not produced primarily due to reasons other than cloud
+    bits01Mask = bitwiseExtract(qa, 0, 1).lte(1); 
+    # Bits 2-"3": Data quality flag
+    # "0": Good data quality
+    # "1": Other quality data
+    # "2": TBD
+    # "3": TBD
+    bits23Mask = bitwiseExtract(qa, 2, 3).eq(0)
+    # Bits 4-"5": Emissivity error flag
+    # "0": Average emissivity error <= 0.01
+    # "1": 0.01 < Average emissivity error <= 0.02
+    # "2": 0.02 < Average emissivity error <= 0.04
+    # "3": Average emissivity error > 0.04
+    bits45Mask = bitwiseExtract(qa, 4, 5).eq(0)
+    # Bit 6-"7": LST error flag
+    # "0": Average LST error <= 1K
+    # "1": Average LST error <= 2K
+    # "2": Average LST error <= 3K
+    # "3": Average LST error > 3K
+    bit6Mask = bitwiseExtract(qa, 6, 7).lte(1)
+
+    mask = bits01Mask.And(bits23Mask).And(bits45Mask).And(bit6Mask)
+
+    return image.updateMask(mask)
+
+
+def get_day_collection(dataset_id, date_start, date_end):
     return (
         ee.ImageCollection(dataset_id)
-        .select(['LST_Night_1km', 'QC_Night', 'LST_Day_1km', 'QC_Day'])
+        .select(['LST_Day_1km', 'QC_Day'])
         .filterDate(date_start, date_end)
         .filterBounds(greenland)
-        .map(lst_conversion)
-        .select(['LST_Night_C', 'QC_Night', 'LST_Day_C', 'QC_Day'])
+        .map(maskQualityDaytime)
+        .map(lst_conversion_day)
+        .select(['LST_Day_C', 'QC_Day'])
+    )
+
+
+def get_night_collection(dataset_id, date_start, date_end):
+    return (
+        ee.ImageCollection(dataset_id)
+        .select(['LST_Night_1km', 'QC_Night'])
+        .filterDate(date_start, date_end)
+        .filterBounds(greenland)
+        .map(maskQualityNighttime)
+        .map(lst_conversion_night)
+        .select(['LST_Night_C', 'QC_Night'])
     )
 
 def add_poi_id(feature):
@@ -61,22 +151,15 @@ def add_poi_id(feature):
 
 poi_with_id = poi.map(add_poi_id)
 
-
-def prepare_collection_for_join(collection, prefix):
+def prepare_collection_for_join(collection, prefix, bands):
     def rename_and_tag(img):
         renamed = img.select(
-            ['LST_Day_C', 'LST_Night_C', 'QC_Day', 'QC_Night'],
-            [f'{prefix}_LST_Day_C', f'{prefix}_LST_Night_C', f'{prefix}_QC_Day', f'{prefix}_QC_Night'],
+            bands,
+            [f'{prefix}_{band}' for band in bands],
         )
         return renamed.set('date', img.date().format('YYYY-MM-dd')).set('system:time_start', img.get('system:time_start'))
 
     return collection.map(rename_and_tag)
-
-def merge_joined_pair(joined_feature):
-    '''Merge the primary and secondary images from the joined feature into a single image with all bands.'''
-    primary = ee.Image(joined_feature.get('primary'))
-    secondary = ee.Image(joined_feature.get('secondary'))
-    return ee.Image.cat(primary, secondary).set('date', primary.get('date')).set('system:time_start', primary.get('system:time_start'))
 
 
 def extract_collection_at_poi(collection):
@@ -95,6 +178,7 @@ def extract_collection_at_poi(collection):
                     'object_id': f.get('object_id'),
                     'class': f.get('class'),
                     'date': date,
+                    'sample_key': ee.String(f.get('object_id')).cat('_').cat(ee.String(f.get('class'))).cat('_').cat(date),
                 }
             )
         )
@@ -102,25 +186,58 @@ def extract_collection_at_poi(collection):
     return ee.FeatureCollection(collection.map(sample_image).flatten())
 
 
-def build_paired_collection_for_year(year):
+def merge_feature_join(joined_feature, match_property):
+    primary = ee.Feature(joined_feature)
+    matched = primary.get(match_property)
+
+    return ee.Feature(
+        ee.Algorithms.If(
+            matched,
+            primary.copyProperties(ee.Feature(matched), ee.Feature(matched).propertyNames()),
+            primary,
+        )
+    )
+
+
+def outer_join_feature_collections(primary, secondary, match_property):
+    key_filter = ee.Filter.equals(leftField='sample_key', rightField='sample_key')
+    joined = ee.Join.saveFirst(match_property).apply(primary, secondary, key_filter)
+    primary_joined = ee.FeatureCollection(joined.map(lambda f: merge_feature_join(f, match_property)))
+    secondary_only = ee.FeatureCollection(ee.Join.inverted().apply(secondary, primary, key_filter))
+    return primary_joined.merge(secondary_only)
+
+
+def build_sensor_collection_for_year(year, dataset_id, prefix):
     date_start = ee.Date.fromYMD(year, 1, 1)
     date_end = date_start.advance(1, 'year')
 
-    terra = get_collection('MODIS/061/MOD11A1', date_start, date_end)
-    aqua = get_collection('MODIS/061/MYD11A1', date_start, date_end)
+    day_collection = prepare_collection_for_join(
+        get_day_collection(dataset_id, date_start, date_end),
+        prefix,
+        ['LST_Day_C', 'QC_Day'],
+    )
+    night_collection = prepare_collection_for_join(
+        get_night_collection(dataset_id, date_start, date_end),
+        prefix,
+        ['LST_Night_C', 'QC_Night'],
+    )
 
-    terra_for_join = prepare_collection_for_join(terra, 'Terra')
-    aqua_for_join = prepare_collection_for_join(aqua, 'Aqua')
+    day_samples = extract_collection_at_poi(day_collection)
+    night_samples = extract_collection_at_poi(night_collection)
 
-    time_filter = ee.Filter.equals(leftField='system:time_start', rightField='system:time_start')
-    joined = ee.Join.inner().apply(terra_for_join, aqua_for_join, time_filter)
+    return outer_join_feature_collections(day_samples, night_samples, f'{prefix}_night_match')
 
-    return ee.ImageCollection(joined.map(merge_joined_pair))
+
+def build_paired_collection_for_year(year):
+    terra = build_sensor_collection_for_year(year, 'MODIS/061/MOD11A1', 'Terra')
+    aqua = build_sensor_collection_for_year(year, 'MODIS/061/MYD11A1', 'Aqua')
+
+    return outer_join_feature_collections(terra, aqua, 'aqua_match')
 
 
 def export_year(year):
     paired_collection = build_paired_collection_for_year(year)
-    all_samples = extract_collection_at_poi(paired_collection)
+    all_samples = paired_collection
 
     description = f'GEMLST_MODIS_LST_POI_{year}_new'
     selectors = [

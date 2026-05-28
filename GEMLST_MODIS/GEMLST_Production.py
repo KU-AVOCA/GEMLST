@@ -322,7 +322,7 @@ for s in months:
         ee.ImageCollection('JAXA/GCOM-C/L3/LAND/LST/V3')
         .select(['LST_AVE', 'LST_QA_flag'])
         .filter(ee.Filter.eq('SATELLITE_DIRECTION', 'A')) # Filter for ascending (AM) overpasses
-        .filter(ee.Filter.eq('PROCESSING_RESULT', 'Good')) # *************** NEW OBS! CHECK IF CORRECT
+        .filter(ee.Filter.eq('PROCESSING_RESULT', 'Good')) 
         .filterDate(date_start, date_end)
         .filterBounds(greenland)
         .map(maskJaxa)
@@ -333,7 +333,7 @@ for s in months:
         ee.ImageCollection('JAXA/GCOM-C/L3/LAND/LST/V3')
         .select(['LST_AVE', 'LST_QA_flag'])
         .filter(ee.Filter.eq('SATELLITE_DIRECTION', 'D')) # Filter for descending (PM) overpasses
-        .filter(ee.Filter.eq('PROCESSING_RESULT', 'Good')) # *************** NEW OBS! CHECK IF CORRECT
+        .filter(ee.Filter.eq('PROCESSING_RESULT', 'Good')) 
         .filterDate(date_start, date_end)
         .filterBounds(greenland)
         .map(maskJaxa)

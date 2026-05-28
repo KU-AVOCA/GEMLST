@@ -46,15 +46,15 @@ def split_df (df):
     df_ice_night = df_ice[['object_id','date','Terra_LST_Night_C', 'Aqua_LST_Night_C', 'diff_night', 'year', 'class']]
     return df_land_day, df_ice_day, df_land_night, df_ice_night
 
-def noise_filter_day(df):
-    '''Remove paired pixel values where absolute differences exceed the mean of their absolute values'''
-    df_filtered = df[(df['diff_day'].abs() <= 0.5 * ((df['Terra_LST_Day_C'] + df['Aqua_LST_Day_C']).abs()))]
-    return df_filtered
+# def noise_filter_day(df):
+#     '''Remove paired pixel values where absolute differences exceed their average value'''
+#     df_filtered = df[(df['diff_day'].abs() <= 0.5 * ((df['Terra_LST_Day_C'] + df['Aqua_LST_Day_C']).abs()))]
+#     return df_filtered
 
-def noise_filter_night(df):
-    '''Remove paired pixel values where absolute differences exceed half the sum of their absolute values'''
-    df_filtered = df[(df['diff_night'].abs() <= 0.5 * ((df['Terra_LST_Night_C'] + df['Aqua_LST_Night_C']).abs()))]
-    return df_filtered
+# def noise_filter_night(df):
+#     '''Remove paired pixel values where absolute differences exceed half the sum of their absolute values'''
+#     df_filtered = df[(df['diff_night'].abs() <= 0.5 * ((df['Terra_LST_Night_C'] + df['Aqua_LST_Night_C']).abs()))]
+#     return df_filtered
 
 def load_yearly_data(year):
     '''Load yearly data and apply functions'''
@@ -63,8 +63,8 @@ def load_yearly_data(year):
     df = calc_diff(df)
     df['year'] = int(year)
     df_land_day, df_ice_day, df_land_night, df_ice_night = split_df(df)
-    df_land_day, df_ice_day = noise_filter_day(df_land_day), noise_filter_day(df_ice_day)
-    df_land_night, df_ice_night = noise_filter_night(df_land_night), noise_filter_night(df_ice_night)
+    # df_land_day, df_ice_day = noise_filter_day(df_land_day), noise_filter_day(df_ice_day)
+    # df_land_night, df_ice_night = noise_filter_night(df_land_night), noise_filter_night(df_ice_night)
     return df_land_day, df_ice_day, df_land_night, df_ice_night
 
 for year in yr_range:
@@ -269,4 +269,21 @@ for yr in yr_range:
 # Suggested changes: 
 # Split analysis for ice / land - still significant
 # Compare data to other reference data (VIIRS) 
+
+# %%
+
+test_df = pd.DataFrame({
+    'Terra_LST_Day_C': np.arange(-5, 5, 1),
+    'Aqua_LST_Day_C': np.arange(-3, 7, 1)})
+test_df['diff_day'] = test_df['Terra_LST_Day_C'] - test_df['Aqua_LST_Day_C']
+test_df['Terra_LST_K'] = test_df['Terra_LST_Day_C'] + 273.15
+test_df['Aqua_LST_K'] = test_df['Aqua_LST_Day_C'] + 273.15
+test_df['diff_day_K'] = test_df['Terra_LST_K'] - test_df['Aqua_LST_K']
+
+
+test_df_filtered_new = test_df[(test_df['diff_day'].abs() / (0.5 * ((test_df['Terra_LST_Day_C'] + test_df['Aqua_LST_Day_C']).abs()))) > 1]
+test_df_filtered_new_K = test_df[(test_df['diff_day_K'].abs() / (0.5 * ((test_df['Terra_LST_K'] + test_df['Aqua_LST_K']).abs()))) > 1]
+
+print(test_df_filtered_new), print(test_df_filtered_new_K)
+
 
