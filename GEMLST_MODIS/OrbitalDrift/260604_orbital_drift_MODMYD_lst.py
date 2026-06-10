@@ -23,11 +23,11 @@ for sname in names:
         print(f'File not found: {file_path}')
 
 mappings = {
-    #'TerraD_df': {'MOD_LST_Day':'lst', 'MOD_QA_Day':'qa'},
+    'TerraD_df': {'MOD_LST_Day':'lst', 'MOD_QA_Day':'qa'},
     'TerraN_df': {'MOD_LST_Night':'lst', 'MOD_QA_Night':'qa'},
-    #'AquaD_df': {'MYD_LST_Day':'lst', 'MYD_QA_Day':'qa'},
+    'AquaD_df': {'MYD_LST_Day':'lst', 'MYD_QA_Day':'qa'},
     'AquaN_df': {'MYD_LST_Night':'lst', 'MYD_QA_Night':'qa'},
-    #'VIIRS_Day_df': {'VIIRS_LST_1KM_C':'lst', 'VIIRS_QC':'qa'},
+    'VIIRS_Day_df': {'VIIRS_LST_1KM_C':'lst', 'VIIRS_QC':'qa'},
     #'VIIRS_Night_df': {'VIIRS_LST_1KM_C':'lst', 'VIIRS_QC':'qa'}
 }
 
@@ -40,11 +40,13 @@ for df, mapping in mappings.items():
 # Join pairs: TerraN-AquaN, TerraD-AquaD, VIIRS_Day-TerraD, VIIRS_Day_AquaD, VIIRS_Night-TerraN, VIIRS_Night-AquaN
 
 Terra_Aqua_N = pd.merge(TerraN_df, AquaN_df, on=['object_id', 'date', 'class'])
-# Terra_Aqua_D = pd.merge(TerraD_df, AquaD_df, on=['object_id', 'date', 'class'])
-# Terra_VIIRS_D = pd.merge(TerraD_df, VIIRS_Day_df, on=['object_id', 'date', 'class'])
+Terra_Aqua_D = pd.merge(TerraD_df, AquaD_df, on=['object_id', 'date', 'class'])
+Terra_VIIRS_D = pd.merge(TerraD_df, VIIRS_Day_df, on=['object_id', 'date', 'class'])
+Aqua_VIIRS_D = pd.merge(AquaD_df, VIIRS_Day_df, on=['object_id', 'date', 'class'])
+TerraN_VIIRSD = pd.merge(TerraN_df, VIIRS_Day_df, on=['object_id', 'date', 'class'])
+AquaN_VIIRSD = pd.merge(AquaN_df, VIIRS_Day_df, on=['object_id', 'date', 'class'])
 # Terra_VIIRS_N = pd.merge(TerraN_df, VIIRS_Night_df, on=['object_id', 'date', 'class'])
 # Aqua_VIIRS_N = pd.merge(AquaN_df, VIIRS_Night_df, on=['object_id', 'date', 'class'])
-# Aqua_VIIRS_D = pd.merge(AquaD_df, VIIRS_Day_df, on=['object_id', 'date', 'class'])
 
 
 #%%
@@ -94,8 +96,9 @@ def compare_targetyear(df, tgt_year=2020):
     baseline = df[df['year'] < tgt_year]['diff_lst']
     target = df[df['year'] == tgt_year]['diff_lst']
     t_test = stats.ttest_ind(baseline, target, equal_var=False)
-    print(f'T-test comparing {tgt_year} to pre-{tgt_year} years: t-statistic = {t_test.statistic:.2f}, p-value = {t_test.pvalue:.4f}')
-    return t_test
+    t_statistic = f'{t_test.statistic:.2f}'
+    p_value = f'{t_test.pvalue:.3f}'
+    return t_statistic, p_value
 
 def visualize(df):
     '''Visualize differences over time using boxplots'''
@@ -107,14 +110,50 @@ def visualize(df):
     plt.show()
 
 #%%
-# Test functions
+# Cross-sensor comparison: Terra vs Aqua
+
+results_cross_sensor = {}
 
 terra_aqua_n_land, terra_aqua_n_ice = prepare_data(Terra_Aqua_N)
+terra_aqua_d_land, terra_aqua_d_ice = prepare_data(Terra_Aqua_D)
+terra_viirs_d_land, terra_viirs_d_ice = prepare_data(Terra_VIIRS_D)
+aqua_viirs_d_land, aqua_viirs_d_ice = prepare_data(Aqua_VIIRS_D)
+terran_viirsd_land, terran_viirsd_ice = prepare_data(TerraN_VIIRSD)
+aquan_viirsd_land, aquan_viirsd_ice = prepare_data(AquaN_VIIRSD) 
+
+sensor_dict = {
+    'Terra-Aqua Night Land': terra_aqua_n_land,
+    'Terra-Aqua Night Ice': terra_aqua_n_ice,
+    'Terra-Aqua Day Land': terra_aqua_d_land,
+    'Terra-Aqua Day Ice': terra_aqua_d_ice,
+
+    'Terra-VIIRS Day Land' : terra_viirs_d_land,
+    'Terra-VIIRS Day Ice': terra_viirs_d_ice,
+    'Aqua-VIIRS Day Land': aqua_viirs_d_land,
+    'Aqua-VIIRS Day Ice': aqua_viirs_d_ice,
+
+    'Terra-Night VIIRS Day Land': terran_viirsd_land,
+    'Terra-Night VIIRS Day Ice': terran_viirsd_ice,
+    'Aqua-Night VIIRS Day Land': aquan_viirsd_land,
+    'Aqua-Night VIIRS Day Ice': aquan_viirsd_ice
+}
+
+for name, df in sensor_dict.items():
+    t_statistic, p_value = compare_targetyear(df, 2020)
+    results_cross_sensor[name] = {'t_statistic': t_statistic, 'p_value': p_value}
+
+results_df = pd.DataFrame(results_cross_sensor)
+print(results_df)
+
+# t_statistic, p_value = compare_targetyear(terra_aqua_n_land, 2020)
 
 # print(terra_aqua_n_land.head())
 # summarize(terra_aqua_n_ice)
 # compare_targetyear(terra_aqua_n_ice, 2020)
-visualize(terra_aqua_n_ice)
+# visualize(terra_aqua_n_ice)
+
+#%%
+results_df.to_csv(os.path.join(df_path, 'cross_sensor_comparison_results.csv'), index=False)
 
 
 #%%
