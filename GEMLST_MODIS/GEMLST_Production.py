@@ -9,7 +9,8 @@ import numpy as np
 # import os
 # import seaborn as sns
 
-geemap.ee_initialize()
+ee.Authenticate()
+ee.Initialize(project='ee-ivanburgov666')
 
 # %%
 greenlandmask = ee.Image('OSU/GIMP/2000_ICE_OCEAN_MASK').select('ocean_mask').eq(0)
@@ -37,10 +38,10 @@ greenland = ee.Geometry.Polygon(
 
 # create a vector of month time steps
 months = np.arange(1, 2, 1) # last month not inclusive! # 1,13,1
-date_start_initial = ee.Date('2019-04-16') # 1041
+date_start_initial = ee.Date('2020-01-01') # 1041
 
-date_end_mod = ee.Date('2020-02-27') # Before orbital drift TERRA
-date_end_myd = ee.Date('2021-03-18') # Before orbital drift AQUA
+date_end_mod = ee.Date('2025-12-31') # Before orbital drift TERRA 2020-02-27
+date_end_myd = ee.Date('2025-12-31') # Before orbital drift AQUA 2021-03-18
 
 for s in months:
 
@@ -490,6 +491,7 @@ for s in months:
 
     # %%
     corrected_collection = sat_stack.map(applyCorrection)
+
 
 
     # %%
