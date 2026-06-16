@@ -37,8 +37,8 @@ greenland = ee.Geometry.Polygon(
     [-31.636966121354217, 83.7553561747887]]])
 
 # create a vector of month time steps
-months = np.arange(1, 2, 1) # last month not inclusive! # 1,13,1
-date_start_initial = ee.Date('2020-01-01') # 1041
+months = np.arange(1, 12, 1) # last month not inclusive! # 1,13,1
+date_start_initial = ee.Date('2020-02-01') # 1041
 
 date_end_mod = ee.Date('2025-12-31') # Before orbital drift TERRA 2020-02-27
 date_end_myd = ee.Date('2025-12-31') # Before orbital drift AQUA 2021-03-18
@@ -213,7 +213,7 @@ for s in months:
     # ERA5 (full scale)
     def era5_t2m(image):
         'ERA5 2m air temperature conversion'
-        t2m = image.select('mean_2m_air_temperature').subtract(273.15).rename('ERA5_T2m')
+        t2m = image.select('temperature_2m').subtract(273.15).rename('ERA5_T2m')
         return image.addBands(t2m)
 
     # MODIS
@@ -272,8 +272,8 @@ for s in months:
     # Load MODIS Terra and Aqua data, apply quality control and conversion functions
 
     ERA5 = (
-        ee.ImageCollection("ECMWF/ERA5/DAILY")
-        .select(['mean_2m_air_temperature'])
+        ee.ImageCollection("ECMWF/ERA5_LAND/DAILY_AGGR")
+        .select(['temperature_2m'])
         .filterDate(date_start, date_end)
         .filterBounds(greenland)
         .map(era5_t2m)
@@ -283,7 +283,7 @@ for s in months:
         ee.ImageCollection('MODIS/061/MOD11A1')
         .select(['LST_Day_1km', 'QC_Day'])
         .filterDate(date_start, date_end)
-        .filterDate(date_start, date_end_mod)
+        #.filterDate(date_start, date_end_mod)
         .filterBounds(greenland)
         .map(maskQualityDaytime)
         .map(lst_mod_day)
@@ -293,7 +293,7 @@ for s in months:
         ee.ImageCollection('MODIS/061/MOD11A1')
         .select(['LST_Night_1km', 'QC_Night'])
         .filterDate(date_start, date_end)
-        .filterDate(date_start, date_end_mod)
+        #.filterDate(date_start, date_end_mod)
         .filterBounds(greenland)
         .map(maskQualityNighttime)
         .map(lst_mod_night)
@@ -303,7 +303,7 @@ for s in months:
         ee.ImageCollection('MODIS/061/MYD11A1')
         .select(['LST_Day_1km', 'QC_Day'])
         .filterDate(date_start, date_end)
-        .filterDate(date_start, date_end_myd)
+        #.filterDate(date_start, date_end_myd)
         .filterBounds(greenland)
         .map(maskQualityDaytime)
         .map(lst_myd_day)
@@ -313,7 +313,7 @@ for s in months:
         ee.ImageCollection('MODIS/061/MYD11A1')
         .select(['LST_Night_1km', 'QC_Night'])
         .filterDate(date_start, date_end)
-        .filterDate(date_start, date_end_myd)
+        #.filterDate(date_start, date_end_myd)
         .filterBounds(greenland)
         .map(maskQualityNighttime)
         .map(lst_myd_night)
