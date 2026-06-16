@@ -5,7 +5,7 @@ import pandas as pd
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import os
-import tqdm
+from tqdm import tqdm
 
 # %%
 # Create markers if necessary, otherwise mute.
@@ -76,7 +76,7 @@ def main() -> None:
     selected = imfiles[start_idx:end_idx + 1]
 
     # Use all CPUs minus one (at least 1 worker)
-    max_workers = max(15, (os.cpu_count() or 1) - 1)
+    max_workers = 10
 
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         futures = [
