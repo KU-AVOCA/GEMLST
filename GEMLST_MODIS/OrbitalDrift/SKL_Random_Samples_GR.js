@@ -9,7 +9,7 @@ Run the script directly in the GEE console.
 initialize random sampler
 */
 var cellSize = 10000, //size of the sample grid
-    seed = 17793, // just the year of this script :)
+    seed = 17793, 
     projcrs = "EPSG:3413"; //in WGS 84 / EPSG Greenland Polar Stereographic
 
                
