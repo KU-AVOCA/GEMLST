@@ -36,7 +36,7 @@ sites = [
 aws_df = pd.DataFrame(sites)
 print(len(imfiles), "GEMLST files found in", imfolder)
 
-output_csv = "lst_from_GEMLST_at_GEM_long.csv"
+output_csv = "lst_from_GEMLST_at_GEM_longtest.csv"
 
 
 #%%
@@ -47,7 +47,7 @@ x_3413, y_3413 = transformer.transform(aws_df['longitude'].values, aws_df['latit
 
 results = []
 
-for file in imfiles:
+for file in imfiles[:5]:
     with rio.open(file) as src:
         # Read the raster data
         lst = src.read(1)  # Assuming single band raster
@@ -87,7 +87,7 @@ print("saved")
 #%% 
 # MERGE WITH AWS SHEET
 
-aws_sheet = "aws_temperature.csv"
+aws_sheet = "aws_daily_temperature.csv"
 gem_aws_data = pd.read_csv(os.path.join(aws_path, aws_sheet))
 gem_aws_data = gem_aws_data[gem_aws_data['temperature'].notnull()]
 
@@ -95,7 +95,7 @@ gem_aws_data = gem_aws_data[gem_aws_data['temperature'].notnull()]
 rs_lst = pd.read_csv(rs_lst_path)
 rs_lst["aws"] = rs_lst["aws"].replace({'Zackenberg_M4_30min' : 'Zackenberg_M4'})
 
-validation_outputname = "validation_sheet_Land.csv"
+validation_outputname = "validation_sheet_Landtest.csv"
 validation_sheet_land = gem_aws_data.merge(rs_lst, how = 'left', on = ['Date', 'aws'])
 
 validation_sheet_land.to_csv(validation_outputname, index=False)
