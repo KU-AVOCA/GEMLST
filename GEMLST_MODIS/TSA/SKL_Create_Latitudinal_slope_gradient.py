@@ -59,14 +59,14 @@ fig, (ax1, ax2) = plt.subplots(
     1, 2,
     figsize=(6, 6),
     dpi=300,
-    gridspec_kw={'width_ratios': [6, 3], 'wspace': 0},
+    gridspec_kw={'width_ratios': [6, 4], 'wspace': 0},
     constrained_layout=True
 )
 
 # Show the slope image in the first subplot
 cmap = ListedColormap(sns.color_palette("coolwarm", 256).as_hex())
 im = ax1.imshow(sslope, cmap=cmap, vmin=-0.1, vmax=0.1)
-cbar = plt.colorbar(im, ax=ax2, fraction=0.1, pad=0.03, extend='both', location='bottom')
+cbar = plt.colorbar(im, ax=ax2, fraction=0.09, pad=0.03, extend='both', location='bottom')
 cbar.set_label('°C yr-1', fontsize=8)
 cbar.ax.tick_params(labelsize=8, rotation=0)
 
@@ -79,8 +79,8 @@ tick_indices = [np.argmin(np.abs(y_coords_4326 - lat)) for lat in tick_lats]
 tick_labels = [f"{lat:.0f}° N" for lat in tick_lats]
 ax1.set_yticks(tick_indices)
 ax1.set_yticklabels(tick_labels, fontsize=8)
-ax1.yaxis.set_label_position("right")
-ax1.yaxis.tick_right()
+ax1.yaxis.set_label_position("left")
+ax1.yaxis.tick_left()
 ax1.set_xticks([])
 
 
@@ -97,6 +97,7 @@ ax2.invert_yaxis()
 ax2.set_ylim(len(median_values), 0)
 # plt.tight_layout()
 plt.savefig(f"median_slope_values.pdf", format='pdf', dpi=300)
+plt.savefig("median_slope_values.png", format='png', dpi=300)
 
 plt.show()
 
