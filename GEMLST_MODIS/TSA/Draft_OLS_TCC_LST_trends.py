@@ -155,6 +155,6 @@ plt.show()
 #%%
 
 # Export the plot as a PNG file
-fig.savefig("TSA_OLS_results_LST_TCC.png", dpi=300, bbox_inches='tight')
+# fig.savefig("TSA_OLS_results_LST_TCC.png", dpi=300, bbox_inches='tight')
 plt.close()
 

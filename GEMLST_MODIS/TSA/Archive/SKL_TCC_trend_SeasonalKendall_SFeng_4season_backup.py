@@ -25,11 +25,9 @@ Outputs:
         Band 5: mk_pvalue
         Band 6: sens_slope_per_year
 
-    Seasonal GeoTIFF (12 bands):
+    Seasonal GeoTIFF (8 bands):
         Bands 1-4: seasonal_tau_DJF, seasonal_tau_MAM, seasonal_tau_JJA, seasonal_tau_SON
         Bands 5-8: seasonal_pvalue_DJF, seasonal_pvalue_MAM, seasonal_pvalue_JJA, seasonal_pvalue_SON
-        Bands 9-12: seasonal_sens_slope_DJF, seasonal_sens_slope_MAM,
-                    seasonal_sens_slope_JJA, seasonal_sens_slope_SON
 
 Shunan Feng (shunan.feng@envs.au.dk)
 Simon Kleiner (wqv321@alumni.ku.dk)
@@ -63,11 +61,11 @@ DATA_MODE = "4seasons"
 #   GEMLST_2001_DJF.tif
 #
 _SEASONAL = dict(
-    input_dir="/media/sfm/Local Data/SimonKleiner/GEMLST/quarterly_lst/",
-    input_glob="GEMLST_*.tif",
+    input_dir="/media/sfm/Local Data/SimonKleiner/CARRA/TCC_quarterly/",
+    input_glob="TCC_*.tif",
     output_dir="/media/sfm/Local Data/SimonKleiner/Results/quarterly/",
-    output_tif="lst_trend_{DATA_MODE}.tif",
-    date_regex=r"GEMLST_(\d{4})_(MAM|JJA|SON|DJF)\.tif",
+    output_tif="tcc_trend_{DATA_MODE}.tif",
+    date_regex=r"TCC_(\d{4})_(MAM|JJA|SON|DJF)\.tif",
 )
 
 _CFG = _SEASONAL
@@ -120,7 +118,6 @@ BAND_NAMES = [
 SEASONAL_BAND_NAMES = [
     *(f"seasonal_tau_{season}" for season in SEASON_ORDER),
     *(f"seasonal_pvalue_{season}" for season in SEASON_ORDER),
-    *(f"seasonal_sens_slope_{season}" for season in SEASON_ORDER),
 ]
 
 # ---------------------------------------------------------------------------
@@ -303,13 +300,6 @@ def _process_tile(args):
                 seasonal_maps[f"seasonal_tau_{season}"][r, c] = seasonal_tau[season_idx]
                 seasonal_maps[f"seasonal_pvalue_{season}"][r, c] = seasonal_pvalue[season_idx]
 
-                season_valid = valid & (season_codes == season_idx)
-                if int(season_valid.sum()) >= 2:
-                    seasonal_maps[f"seasonal_sens_slope_{season}"][r, c] = stats.theilslopes(
-                        pixel[season_valid].astype(np.float64),
-                        t_year[season_valid],
-                    ).slope
-
             # --- Sen's slope (Theil-Sen estimator, slope in units/year) ---
             theil = stats.theilslopes(y, t)
             sens_slope[r, c] = theil.slope
@@ -333,10 +323,10 @@ def _process_tile(args):
 def main() -> None:
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     output_path = os.path.join(OUTPUT_DIR, OUTPUT_TIF)
-    seasonal_output_path = os.path.join(OUTPUT_DIR, f"lst_trend_{DATA_MODE}_quarters.tif")
+    seasonal_output_path = os.path.join(OUTPUT_DIR, f"tcc_trend_{DATA_MODE}_quarters.tif")
 
     print("=" * 60)
-    print(f"Seasonal LST Trend Analysis — {DATA_MODE.upper()} (scipy, multiprocessing)")
+    print(f"Seasonal TCC Trend Analysis — {DATA_MODE.upper()} (scipy, multiprocessing)")
     print("=" * 60)
     print(f"Input dir   : {INPUT_DIR}")
     print(f"Output file : {output_path}")

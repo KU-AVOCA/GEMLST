@@ -25,9 +25,11 @@ Outputs:
         Band 5: mk_pvalue
         Band 6: sens_slope_per_year
 
-    Seasonal GeoTIFF (8 bands):
+    Seasonal GeoTIFF (12 bands):
         Bands 1-4: seasonal_tau_DJF, seasonal_tau_MAM, seasonal_tau_JJA, seasonal_tau_SON
         Bands 5-8: seasonal_pvalue_DJF, seasonal_pvalue_MAM, seasonal_pvalue_JJA, seasonal_pvalue_SON
+        Bands 9-12: seasonal_sens_slope_DJF, seasonal_sens_slope_MAM,
+                    seasonal_sens_slope_JJA, seasonal_sens_slope_SON
 
 Shunan Feng (shunan.feng@envs.au.dk)
 Simon Kleiner (wqv321@alumni.ku.dk)
@@ -118,6 +120,7 @@ BAND_NAMES = [
 SEASONAL_BAND_NAMES = [
     *(f"seasonal_tau_{season}" for season in SEASON_ORDER),
     *(f"seasonal_pvalue_{season}" for season in SEASON_ORDER),
+    *(f"seasonal_sens_slope_{season}" for season in SEASON_ORDER),
 ]
 
 # ---------------------------------------------------------------------------
@@ -299,6 +302,13 @@ def _process_tile(args):
             for season_idx, season in enumerate(SEASON_ORDER):
                 seasonal_maps[f"seasonal_tau_{season}"][r, c] = seasonal_tau[season_idx]
                 seasonal_maps[f"seasonal_pvalue_{season}"][r, c] = seasonal_pvalue[season_idx]
+
+                season_valid = valid & (season_codes == season_idx)
+                if int(season_valid.sum()) >= 2:
+                    seasonal_maps[f"seasonal_sens_slope_{season}"][r, c] = stats.theilslopes(
+                        pixel[season_valid].astype(np.float64),
+                        t_year[season_valid],
+                    ).slope
 
             # --- Sen's slope (Theil-Sen estimator, slope in units/year) ---
             theil = stats.theilslopes(y, t)
