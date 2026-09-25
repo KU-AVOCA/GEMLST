@@ -38,7 +38,7 @@ def return_stats(df):
     # Calculate RMSE
     rmse = ((df['RS_LST'] - df['temperature']) ** 2).mean() ** 0.5
 
-    s1 = f'No. of observations: {len(df)} \nSlope: {coef:.3f} \nIntercept: {intercept:.3f} \nR2: {r2} \nRMSE: {rmse:.2f} °C'
+    s1 = f'No. of observations: {len(df)} \nSlope: {coef:.3f} \nIntercept: {intercept:.3f} \nR2: {r2:.2f} \nRMSE: {rmse:.2f} °C'
     
     # Print model summary
     # print(f"Model Summary:\nNo. of observations: {len(df)}\nCoefficients: {model.coef_}\nIntercept: {model.intercept_}\nR2: {r2}\nRMSE: {rmse:.2f} °C\n")
@@ -84,9 +84,10 @@ def viz(df, stats):
     hist = sns.histplot(ax=ax, data=df, x='RS_LST', y='temperature', bins=60, discrete=True, cbar=True, cmap=cmocean.cm.thermal, cbar_kws={'label': 'Count', 'fraction': 0.05, 'pad': 0.02})
     hist.collections[0].colorbar.ax.tick_params(labelsize=8)
     hist.collections[0].colorbar.set_label('Count', fontsize=8)
-    sns.regplot(ax=ax, data=df, x='RS_LST', y='temperature', scatter=False, color='gold')
-    ax.plot([min_val, max_val], [min_val, max_val], '--', color='cyan', alpha=0.8)
-    ax.text(0.01, 0.813, stats, fontdict=font, bbox=bbox, transform=ax.transAxes, horizontalalignment='left')
+    sns.regplot(ax=ax, data=df, x='RS_LST', y='temperature', scatter=False, color='cyan', line_kws={'lw': 1.2})
+    ax.plot([min_val, max_val], [min_val, max_val], '--', color='lightgrey', linewidth=1.2)
+    ax.text(0.01, 0.810, stats, fontdict=font, bbox=bbox, transform=ax.transAxes, horizontalalignment='left')
+    # ax.text(0.01, 0.813, stats, fontdict=font, bbox=bbox, transform=ax.transAxes, horizontalalignment='left')
     ax.set_xlim(min_val, max_val)
     ax.set_ylim(min_val, max_val)
     ax.xaxis.set_major_locator(MultipleLocator(20))
@@ -100,7 +101,8 @@ def viz(df, stats):
     plt.tight_layout()
 
     # Save the fugure as vector pdf 
-    plt.savefig(f"validation_stats_plot_land.pdf", format='pdf', dpi=300)
+    # plt.savefig(f"validation_stats_plot_land.pdf", format='pdf', dpi=300)
+    plt.savefig(f"validation_stats_plot_land.png", format='png', dpi=300)
     plt.show()
     plt.close(fig)
 
@@ -143,9 +145,10 @@ def viz(df, stats):
     hist = sns.histplot(ax=ax, data=df, x='RS_LST', y='temperature', bins=60, discrete=True, cbar=True, vmax=1000, cmap=cmocean.cm.thermal, cbar_kws={'label': 'Count', 'fraction': 0.05, 'pad': 0.02, 'extend': 'max'})
     hist.collections[0].colorbar.ax.tick_params(labelsize=8)
     hist.collections[0].colorbar.set_label('Count', fontsize=8)
-    sns.regplot(ax=ax, data=df, x='RS_LST', y='temperature', scatter=False, color='gold')
-    ax.plot([min_val, max_val], [min_val, max_val], '--', color='cyan', alpha=0.8)
-    ax.text(0.01, 0.811, stats, fontdict=font, bbox=bbox, transform=ax.transAxes, horizontalalignment='left')
+    sns.regplot(ax=ax, data=df, x='RS_LST', y='temperature', scatter=False, color='cyan', line_kws={'lw': 1.2})
+    ax.plot([min_val, max_val], [min_val, max_val], '--', color='lightgrey',linewidth=1.2)
+    ax.text(0.01, 0.806, stats, fontdict=font, bbox=bbox, transform=ax.transAxes, horizontalalignment='left')
+    # ax.text(0.01, 0.811, stats, fontdict=font, bbox=bbox, transform=ax.transAxes, horizontalalignment='left')
     ax.set_xlim(min_val, max_val)
     ax.set_ylim(min_val, max_val)
     ax.xaxis.set_major_locator(MultipleLocator(20))
@@ -157,7 +160,8 @@ def viz(df, stats):
     plt.tight_layout()
 
     # Save the fugure as vector pdf 
-    plt.savefig(f"validation_stats_plot_ice.pdf", format='pdf', dpi=300)
+    # plt.savefig(f"validation_stats_plot_ice.pdf", format='pdf', dpi=300)
+    plt.savefig(f"validation_stats_plot_ice.png", format='png', dpi=300)
     plt.show()
     plt.close(fig)
 
