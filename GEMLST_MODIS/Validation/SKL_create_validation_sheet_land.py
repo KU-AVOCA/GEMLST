@@ -96,7 +96,7 @@ rs_lst = pd.read_csv(rs_lst_path)
 rs_lst["aws"] = rs_lst["aws"].replace({'Zackenberg_M4_30min' : 'Zackenberg_M4'})
 
 validation_outputname = "validation_sheet_Landtest.csv"
-validation_sheet_land = gem_aws_data.merge(rs_lst, how = 'left', on = ['Date', 'aws'])
+validation_sheet_land = rs_lst.merge(gem_aws_data, how = 'left', on = ['Date', 'aws'])
 
 validation_sheet_land.to_csv(validation_outputname, index=False)
 
