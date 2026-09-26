@@ -108,7 +108,7 @@ else: rs_lst_path = input("Please specify path to 'daily_prepped.csv' manually")
 rs_lst = pd.read_csv(rs_lst_path)
 
 validation_outputname = "validation_sheet_ice.csv"
-validation_sheet_ice = gem_aws_data.merge(rs_lst, how = 'left', on = ['date', 'aws'])
+validation_sheet_ice = rs_lst.merge(gem_aws_data, how = 'left', on = ['date', 'aws'])
 
 validation_sheet_ice.to_csv(validation_outputname, index=False)
 
