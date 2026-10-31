@@ -1,3 +1,26 @@
+# # GEMLST Production Workflow
+#
+# This Google Earth Engine script generates corrected daily land-surface
+# temperature (LST) products over Greenland for the configured year. It:
+#
+# - Authenticates Earth Engine and defines Greenland, land, ice, and ocean
+#   masks.
+# - Loads daily Terra MODIS, Aqua MODIS, VIIRS, and JAXA GCOM-C LST collections.
+# - Applies sensor-specific quality-control masks and converts source values
+#   to degrees Celsius.
+# - Matches all collections by date and combines the available satellite
+#   observations into a daily multi-sensor stack.
+# - Calculates a per-pixel sensor-availability pattern.
+# - Looks up the corresponding land and ice regression coefficients by pattern
+#   ID, calibrates the combined LST values, and keeps physically plausible
+#   ice temperatures.
+# - Adds the corrected LST and availability-pattern bands and exports the
+#   results for each processed month to Google Drive.
+#
+# The processing period, Earth Engine asset identifiers, coefficient lookup
+# assets, export settings, and sensor collections are defined in the code
+# below.
+
 # %%
 # Import packages and initialize Earth Engine
 
@@ -38,7 +61,7 @@ greenland = ee.Geometry.Polygon(
 
 # create a vector of month time steps
 months = np.arange(1, 13, 1) # last month not inclusive! # 1,13,1
-date_start_initial = ee.Date('2025-01-01')
+date_start_initial = ee.Date('2000-01-01')
 
 date_end_mod = ee.Date('2025-12-31') # Before orbital drift TERRA 2020-02-27
 date_end_myd = ee.Date('2025-12-31') # Before orbital drift AQUA 2021-03-18
