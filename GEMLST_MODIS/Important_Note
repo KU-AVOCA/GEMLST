@@ -1,0 +1,10 @@
+This folder contains all scrips needed for 
+- preprocessing of data, incl. extraction of satellite derived LST data from AWS locations used for later regression
+- linear regression and retrievel of calibration coefficients
+- Creation of harmonized multi-satellite images 
+
+Note: The datacloud ERDA (KU) is currently not accessible. Therefore, some input data (e.g. ERA5) and the gap-filling script could not be uploaded to this repository and are missing for now.
+Any missing scripts will be uploaded swiftly when the cloud is working again. 
+
+Regards, 
+Simon Kleiner 
